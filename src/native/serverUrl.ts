@@ -1,6 +1,6 @@
 import { URL } from "node:url";
 
-import { app, BrowserWindow, ipcMain, session, WebContents } from "electron";
+import { BrowserWindow, WebContents, app, ipcMain, session } from "electron";
 
 import { DEFAULT_SERVER_URL } from "../constants";
 
