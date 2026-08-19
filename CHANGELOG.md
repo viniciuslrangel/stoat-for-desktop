@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.108.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.6...v1.108.0) (2026-08-19)
+
+
+### Features
+
+* extract screen share handler with Windows capture optimizations ([751e2ec](https://github.com/viniciuslrangel/stoat-for-desktop/commit/751e2ec4bba75d92510993e90811e405b5911dc6))
+
 ## [1.107.6](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.5...v1.107.6) (2026-08-19)
 
 
