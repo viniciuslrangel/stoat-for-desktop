@@ -26,6 +26,13 @@ export const BUILD_URL = new URL(
     : /*MAIN_WINDOW_VITE_DEV_SERVER_URL ??*/ "https://stoat.chat/app",
 );
 
+/** Startup URL with a version query param to bust stale caches after app updates. */
+function getStartupUrl(): string {
+  const url = new URL(BUILD_URL.toString());
+  url.searchParams.set("v", app.getVersion());
+  return url.toString();
+}
+
 // internal window state
 let shouldQuit = false;
 
@@ -88,10 +95,8 @@ export function createMainWindow() {
     mainWindow.maximize();
   }
 
-  // load the entrypoint
-  mainWindow
-    .loadURL(BUILD_URL.toString())
-    .then(() => mainWindow.webContents.reload());
+  // load the entrypoint (single load; avoid reload race with IndexedDB session restore)
+  mainWindow.loadURL(getStartupUrl());
 
   // minimise window to tray
   mainWindow.on("close", (event) => {
