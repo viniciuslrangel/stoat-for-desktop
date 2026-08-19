@@ -251,14 +251,18 @@ function createSettingsUi(
       return;
     }
 
-    applyInfo(
-      {
-        ...info,
-        url: result.url,
-        storedUrl: result.url === info.defaultUrl ? null : result.url,
-      },
-      true,
-    );
+    info = {
+      ...info,
+      url: result.url,
+      storedUrl: result.url === info.defaultUrl ? null : result.url,
+    };
+    applyInfo(info, true);
+
+    if (result.reloaded) {
+      hint.textContent = "Reloading…";
+      panel.classList.remove("open");
+    }
+
     save.disabled = info.overridden;
   });
 

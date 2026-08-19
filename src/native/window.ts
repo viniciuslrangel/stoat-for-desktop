@@ -14,7 +14,7 @@ import windowIconAsset from "../../assets/desktop/icon.png?asset";
 import { setUpdateStatusTarget } from "./autoUpdate";
 import { config } from "./config";
 import { initScreenShareHandler } from "./screenShare";
-import { getStartupUrl } from "./serverUrl";
+import { getStartupUrl, navigateToConfiguredServer } from "./serverUrl";
 import { updateTrayMenu } from "./tray";
 
 // global reference to main window
@@ -144,7 +144,11 @@ export function createMainWindow() {
       ((input.control || input.meta) && input.key.toLowerCase() === "r")
     ) {
       event.preventDefault();
-      mainWindow.webContents.reload();
+      const hardRefresh = input.shift;
+
+      void (hardRefresh
+        ? navigateToConfiguredServer(mainWindow.webContents)
+        : mainWindow.loadURL(getStartupUrl()));
     } else if (
       input.key === "F12" ||
       (input.control && input.shift && input.key.toLowerCase() === "i") ||

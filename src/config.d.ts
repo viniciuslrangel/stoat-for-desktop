@@ -24,7 +24,7 @@ declare type ServerUrlInfo = {
 };
 
 declare type SetServerUrlResult =
-  | { ok: true; url: string }
+  | { ok: true; url: string; reloaded: boolean }
   | { ok: false; error: string };
 
 declare type UpdateState =
