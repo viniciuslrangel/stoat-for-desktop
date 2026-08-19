@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.108.4](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.3...v1.108.4) (2026-08-19)
+
+
+### Bug Fixes
+
+* sync desktopConfig before renderer scripts run ([7e4a04b](https://github.com/viniciuslrangel/stoat-for-desktop/commit/7e4a04b4aa2c0fe5e6d93b6b3229d924c68dc285))
+* sync desktopConfig before renderer scripts run ([c21abe4](https://github.com/viniciuslrangel/stoat-for-desktop/commit/c21abe44739e769c4bc7d02d18ef0cb5a815b82a))
+
 ## [1.108.3](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.2...v1.108.3) (2026-08-19)
 
 
