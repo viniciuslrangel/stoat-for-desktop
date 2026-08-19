@@ -5,16 +5,15 @@ import {
   Menu,
   MenuItem,
   app,
-  desktopCapturer,
   ipcMain,
   nativeImage,
-  session,
 } from "electron";
 
 import windowIconAsset from "../../assets/desktop/icon.png?asset";
 
 import { setUpdateStatusTarget } from "./autoUpdate";
 import { config } from "./config";
+import { initScreenShareHandler } from "./screenShare";
 import { getStartupUrl } from "./serverUrl";
 import { updateTrayMenu } from "./tray";
 
@@ -210,64 +209,7 @@ export function createMainWindow() {
     menu.popup();
   });
 
-  // Create display media request handler
-  session.defaultSession.setDisplayMediaRequestHandler(
-    (request, callback) => {
-      desktopCapturer
-        .getSources({ types: ["screen", "window"], fetchWindowIcons: true })
-        .then((sources) => {
-          // Shortcut for linux wayland.
-          if (sources.length == 1) {
-            request.audioRequested
-              ? callback({
-                  video: sources[0],
-                  audio: "loopback",
-                })
-              : callback({
-                  video: sources[0],
-                });
-            return;
-          }
-          ipcMain.once(
-            "screenPickerCallback",
-            (_, idx: number, audio: boolean) => {
-              if (idx < 0 || idx > sources.length) {
-                callback({});
-              } else {
-                audio
-                  ? callback({
-                      video: sources[idx],
-                      audio: "loopback",
-                    })
-                  : callback({
-                      video: sources[idx],
-                    });
-              }
-            },
-          );
-          mainWindow.webContents.send(
-            "screenPicker",
-            sources.map((source, idx) => {
-              const image = source.appIcon;
-              if (image) {
-                if (image.getAspectRatio() > 1) {
-                  image.resize({ width: 256 });
-                } else {
-                  image.resize({ height: 256 });
-                }
-              }
-              return {
-                idx: idx,
-                name: source.name,
-                isFullScreen: source.id.startsWith("screen"),
-                image: image?.toDataURL(),
-              };
-            }),
-          );
-        });
-    },
-    { useSystemPicker: true },
-  );
+  initScreenShareHandler(mainWindow);
 
   // push world events to the window
   ipcMain.on("minimise", () => mainWindow.minimize());
