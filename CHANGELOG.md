@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.108.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.0...v1.108.1) (2026-08-19)
+
+
+### Features
+
+* move auto-update indicator into channel header slot ([02197d2](https://github.com/viniciuslrangel/stoat-for-desktop/commit/02197d2f4ae3203a4872088a3a51c710d0ecc5f2))
+
 ## [1.108.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.6...v1.108.0) (2026-08-19)
 
 
