@@ -52,9 +52,15 @@ export function validateServerUrl(input: string): string {
     throw new Error("Server URL must use HTTPS");
   }
 
-  if (url.pathname.endsWith("/") && url.pathname.length > 1) {
-    url.pathname = url.pathname.slice(0, -1);
+  const path = url.pathname.replace(/\/+$/, "") || "";
+
+  if (path !== "" && path !== "/" && path !== "/app") {
+    throw new Error(
+      "Server URL must include /app (e.g. https://your-server.com/app)",
+    );
   }
+
+  url.pathname = "/app";
 
   url.hash = "";
   url.search = "";

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.107.3](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.2...v1.107.3) (2026-08-19)
+
+
+### Bug Fixes
+
+* stop background sync from clearing server URL input while typing or pasting
+* require /app path on server URL (auto-append when host-only)
+
 ## [1.107.2](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.1...v1.107.2) (2026-08-19)
 
 

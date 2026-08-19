@@ -2,6 +2,9 @@ import { ipcRenderer } from "electron";
 
 const ROOT_ID = "stoat-desktop-server-settings";
 
+const APP_PATH_HINT =
+  "Must include /app (e.g. https://stoat.viniciusrangel.dev/app). Host-only URLs get /app appended on save.";
+
 function getServerUrl(): Promise<ServerUrlInfo> {
   return ipcRenderer.invoke("getServerUrl");
 }
@@ -14,7 +17,6 @@ function setServerUrl(url: string): Promise<SetServerUrlResult> {
 function shouldShowServerSettings(): boolean {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
 
-  // Logged-in app areas — hide to avoid clutter
   if (
     path.includes("/channel/") ||
     path.includes("/server/") ||
@@ -45,6 +47,8 @@ function createSettingsUi(
   host: HTMLElement,
   info: ServerUrlInfo,
 ): { update: (info: ServerUrlInfo) => void } {
+  let isEditing = false;
+
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = `
     <style>
@@ -173,7 +177,7 @@ function createSettingsUi(
         <div class="header">Server settings</div>
         <div class="body">
           <label for="stoat-server-url">Server URL</label>
-          <input id="stoat-server-url" type="url" spellcheck="false" placeholder="https://stoat.viniciusrangel.dev" />
+          <input id="stoat-server-url" type="url" spellcheck="false" placeholder="https://stoat.viniciusrangel.dev/app" />
           <div class="actions">
             <button class="save" type="button">Save</button>
           </div>
@@ -196,7 +200,25 @@ function createSettingsUi(
     panel.classList.toggle("open");
   });
 
-  function applyInfo(next: ServerUrlInfo) {
+  input.addEventListener("focus", () => {
+    isEditing = true;
+  });
+
+  input.addEventListener("blur", () => {
+    isEditing = false;
+  });
+
+  input.addEventListener("input", () => {
+    isEditing = true;
+  });
+
+  function applyInfo(next: ServerUrlInfo, force = false) {
+    if (!force && isEditing) {
+      input.disabled = next.overridden;
+      save.disabled = next.overridden;
+      return;
+    }
+
     input.value = next.url;
     input.disabled = next.overridden;
     save.disabled = next.overridden;
@@ -205,49 +227,57 @@ function createSettingsUi(
       hint.textContent =
         "Server URL is overridden by --force-server for this session.";
     } else if (next.storedUrl) {
-      hint.textContent = "Changes are saved and kept between launches.";
+      hint.textContent = `Saved between launches. ${APP_PATH_HINT}`;
     } else {
-      hint.textContent = `Using default server (${next.defaultUrl}).`;
+      hint.textContent = `Default: ${next.defaultUrl}. ${APP_PATH_HINT}`;
     }
 
     error.textContent = "";
   }
 
-  applyInfo(info);
+  applyInfo(info, true);
 
   save.addEventListener("click", async () => {
     error.textContent = "";
     save.disabled = true;
+    isEditing = false;
 
     const result = await setServerUrl(input.value.trim());
 
     if (!result.ok) {
       error.textContent = result.error;
       save.disabled = info.overridden;
+      isEditing = true;
       return;
     }
 
-    applyInfo({
-      ...info,
-      url: result.url,
-      storedUrl: result.url === info.defaultUrl ? null : result.url,
-    });
+    applyInfo(
+      {
+        ...info,
+        url: result.url,
+        storedUrl: result.url === info.defaultUrl ? null : result.url,
+      },
+      true,
+    );
     save.disabled = info.overridden;
   });
 
   return {
-    update: applyInfo,
+    update: (next: ServerUrlInfo) => applyInfo(next, false),
   };
 }
 
 let mountedHost: HTMLElement | null = null;
 let ui: { update: (info: ServerUrlInfo) => void } | null = null;
+let mountPolls = 0;
+const MAX_MOUNT_POLLS = 15;
 
 async function syncSettingsUi() {
   if (!shouldShowServerSettings()) {
     mountedHost?.remove();
     mountedHost = null;
     ui = null;
+    mountPolls = 0;
     return;
   }
 
@@ -280,7 +310,11 @@ if (document.readyState !== "loading") {
   void syncSettingsUi();
 }
 
-// Keep polling while on auth/landing pages (SPA may hydrate late).
+// Poll only until mounted (SPA may hydrate late); avoid overwriting user input afterward.
 window.setInterval(() => {
+  if (mountedHost && mountPolls >= MAX_MOUNT_POLLS) {
+    return;
+  }
+  mountPolls += 1;
   void syncSettingsUi();
 }, 1000);
