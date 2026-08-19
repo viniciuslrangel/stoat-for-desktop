@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.107.4](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.3...v1.107.4) (2026-08-19)
+
+
+### Features
+
+* toggle developer tools with F12, Ctrl+Shift+I, or context menu
+
 ## [1.107.3](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.2...v1.107.3) (2026-08-19)
 
 
