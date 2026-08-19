@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.109.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.0...v1.109.0) (2026-08-19)
+## [1.108.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.0...v1.108.1) (2026-08-19)
 
 
 ### Features
