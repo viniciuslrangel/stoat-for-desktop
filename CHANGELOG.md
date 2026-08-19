@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.107.5](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.4...v1.107.5) (2026-08-19)
+
+
+### Features
+
+* add bottom-left update status indicator with check, download progress, and restart actions
+
 ## [1.107.4](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.3...v1.107.4) (2026-08-19)
 
 

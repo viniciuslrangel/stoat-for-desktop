@@ -13,6 +13,7 @@ import {
 
 import windowIconAsset from "../../assets/desktop/icon.png?asset";
 
+import { setUpdateStatusTarget } from "./autoUpdate";
 import { config } from "./config";
 import { getStartupUrl } from "./serverUrl";
 import { updateTrayMenu } from "./tray";
@@ -156,7 +157,10 @@ export function createMainWindow() {
   });
 
   // send the config
-  mainWindow.webContents.on("did-finish-load", () => config.sync());
+  mainWindow.webContents.on("did-finish-load", () => {
+    config.sync();
+    setUpdateStatusTarget(mainWindow.webContents);
+  });
 
   // configure spellchecker context menu
   mainWindow.webContents.on("context-menu", (_, params) => {

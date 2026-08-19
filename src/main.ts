@@ -1,8 +1,12 @@
-import { IUpdateInfo, updateElectronApp } from "update-electron-app";
-
-import { BrowserWindow, Notification, app, shell } from "electron";
+import { BrowserWindow, app, ipcMain, shell } from "electron";
 import started from "electron-squirrel-startup";
 
+import {
+  checkForUpdatesNow,
+  getUpdateStatus,
+  initAutoUpdate,
+  installDownloadedUpdate,
+} from "./native/autoUpdate";
 import { config } from "./native/config";
 import { initDiscordRpc } from "./native/discordRpc";
 import { getBuildOrigin, initServerUrlIpc } from "./native/serverUrl";
@@ -25,19 +29,17 @@ if (!config.hardwareAcceleration) {
 // ensure only one copy of the application can run
 const acquiredLock = app.requestSingleInstanceLock();
 
-const onNotifyUser = (_info: IUpdateInfo) => {
-  const notification = new Notification({
-    title: "Update Available",
-    body: "Restart the app to install the update.",
-    silent: true,
-  });
-
-  notification.show();
-};
-
 if (acquiredLock) {
-  // start auto update logic
-  updateElectronApp({ onNotifyUser });
+  initAutoUpdate();
+
+  ipcMain.handle("getUpdateStatus", () => getUpdateStatus());
+  ipcMain.handle("checkForUpdatesNow", () => {
+    checkForUpdatesNow();
+    return getUpdateStatus();
+  });
+  ipcMain.handle("installDownloadedUpdate", () => {
+    installDownloadedUpdate();
+  });
 
   // create and configure the app when electron is ready
   app.on("ready", () => {

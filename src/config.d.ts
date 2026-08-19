@@ -26,3 +26,23 @@ declare type ServerUrlInfo = {
 declare type SetServerUrlResult =
   | { ok: true; url: string }
   | { ok: false; error: string };
+
+declare type UpdateState =
+  | "unsupported"
+  | "dev"
+  | "idle"
+  | "checking"
+  | "available"
+  | "downloading"
+  | "downloaded"
+  | "up-to-date"
+  | "error";
+
+declare type UpdateStatus = {
+  state: UpdateState;
+  currentVersion: string;
+  availableVersion: string | null;
+  message: string | null;
+  releaseNotes: string | null;
+  lastCheckedAt: number | null;
+};
