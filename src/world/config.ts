@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld("desktopConfig", {
     return ipcRenderer.invoke("getServerUrl") as Promise<ServerUrlInfo>;
   },
   setServerUrl(url: string) {
-    return ipcRenderer.invoke("setServerUrl", url) as Promise<SetServerUrlResult>;
+    return ipcRenderer.invoke(
+      "setServerUrl",
+      url,
+    ) as Promise<SetServerUrlResult>;
   },
 });

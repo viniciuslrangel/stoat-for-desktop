@@ -105,8 +105,7 @@ export function initServerUrlIpc(): void {
     }
 
     const previous = getResolvedServerUrl();
-    config.serverUrl =
-      normalized === DEFAULT_SERVER_URL ? null : normalized;
+    config.serverUrl = normalized === DEFAULT_SERVER_URL ? null : normalized;
 
     if (normalized !== previous) {
       await reloadToServerUrl();

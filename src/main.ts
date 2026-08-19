@@ -5,9 +5,9 @@ import started from "electron-squirrel-startup";
 
 import { config } from "./native/config";
 import { initDiscordRpc } from "./native/discordRpc";
+import { getBuildOrigin, initServerUrlIpc } from "./native/serverUrl";
 import { initTray } from "./native/tray";
 import { initVirtualMic } from "./native/virtualMic";
-import { getBuildOrigin, initServerUrlIpc } from "./native/serverUrl";
 import { createMainWindow, mainWindow } from "./native/window";
 
 // Squirrel-specific logic
