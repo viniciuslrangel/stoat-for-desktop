@@ -1,10 +1,7 @@
 name: Release Please
 
-# Upstream (stoatchat/for-desktop) uses a GitHub App for release-please tokens.
-# This fork lacks those org secrets; GITHUB_TOKEN also cannot open release PRs
-# unless "Allow GitHub Actions to create and approve pull requests" is enabled.
-# Skip the workflow here — re-enable by removing the job `if` below and supplying
-# GH_STOAT_RELEASE_APP_* secrets, or by enabling Actions PR creation + GITHUB_TOKEN.
+# Fork uses GITHUB_TOKEN (Actions PR creation enabled in repo settings).
+# Upstream stoatchat/for-desktop uses a GitHub App — restore app-token steps when syncing.
 
 on:
   push:
@@ -23,21 +20,15 @@ concurrency:
 jobs:
   release-please:
     name: Release Please
-    if: github.repository == 'stoatchat/for-desktop'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.rp.outputs.release_created }}
       release_version: ${{ steps.rp.outputs.version }}
     steps:
-      - id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.GH_STOAT_RELEASE_APP_ID }}
-          private-key: ${{ secrets.GH_STOAT_RELEASE_APP_PRIVATE_KEY }}
       - id: rp
         uses: googleapis/release-please-action@v4
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
 
   publish-release:
