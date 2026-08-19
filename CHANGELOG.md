@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.6.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.5.2...v1.6.0) (2026-08-19)
+
+
+### Features
+
+* add persistent server URL settings on login screen ([4fb84f5](https://github.com/viniciuslrangel/stoat-for-desktop/commit/4fb84f57c5be907710399d46255efecf0d61203d))
+
+
+### Bug Fixes
+
+* **ci:** enable Release Please on fork with GITHUB_TOKEN ([58599d8](https://github.com/viniciuslrangel/stoat-for-desktop/commit/58599d8d07cab6e05ca4eda6075f3dfe05ea2e2a))
+* **ci:** skip Release Please on personal fork ([3f657b6](https://github.com/viniciuslrangel/stoat-for-desktop/commit/3f657b6ba570cbe2bb5c233c55f6a427d0daee9d))
+* **ci:** skip Release Please on personal fork ([88fe877](https://github.com/viniciuslrangel/stoat-for-desktop/commit/88fe877653dd64c7f6196d78e732d0b1bbb4bce3))
+* enable release-please workflow on fork ([4963cb8](https://github.com/viniciuslrangel/stoat-for-desktop/commit/4963cb86e58cc9ef003c54da49d584d403596700))
+* point autoupdate and releases at fork repo ([e36bd1c](https://github.com/viniciuslrangel/stoat-for-desktop/commit/e36bd1c86cecdb33dbb63c1729ae925ff45aa54b))
+* remove startup reload that races with session restore ([e4e6b42](https://github.com/viniciuslrangel/stoat-for-desktop/commit/e4e6b4204d337af3a3dca14bb73c190bd42300ca))
+
+
+### Reverts
+
+* Add Mic and Webcam Entitlements ([#259](https://github.com/viniciuslrangel/stoat-for-desktop/issues/259)) ([#283](https://github.com/viniciuslrangel/stoat-for-desktop/issues/283)) ([644f076](https://github.com/viniciuslrangel/stoat-for-desktop/commit/644f0765b4d2f83656ea0868f4898091ca9f6442))
+
 ## [1.5.2](https://github.com/stoatchat/for-desktop/compare/v1.5.1...v1.5.2) (2026-08-17)
 
 
