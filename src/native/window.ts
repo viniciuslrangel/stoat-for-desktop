@@ -113,6 +113,14 @@ export function createMainWindow() {
   mainWindow.on("moved", generateState);
   mainWindow.on("resized", generateState);
 
+  function toggleDevTools() {
+    if (mainWindow.webContents.isDevToolsOpened()) {
+      mainWindow.webContents.closeDevTools();
+    } else {
+      mainWindow.webContents.openDevTools({ mode: "detach" });
+    }
+  }
+
   // rebind zoom controls to be more sensible
   mainWindow.webContents.on("before-input-event", (event, input) => {
     if (input.control && (input.key === "=" || input.key === "+")) {
@@ -137,6 +145,13 @@ export function createMainWindow() {
     ) {
       event.preventDefault();
       mainWindow.webContents.reload();
+    } else if (
+      input.key === "F12" ||
+      (input.control && input.shift && input.key.toLowerCase() === "i") ||
+      (input.meta && input.alt && input.key.toLowerCase() === "i")
+    ) {
+      event.preventDefault();
+      toggleDevTools();
     }
   });
 
@@ -180,10 +195,15 @@ export function createMainWindow() {
       }),
     );
 
-    // show menu if we've generated enough entries
-    if (menu.items.length > 0) {
-      menu.popup();
-    }
+    menu.append(new MenuItem({ type: "separator" }));
+    menu.append(
+      new MenuItem({
+        label: "Toggle Developer Tools",
+        click: () => toggleDevTools(),
+      }),
+    );
+
+    menu.popup();
   });
 
   // Create display media request handler
@@ -251,11 +271,6 @@ export function createMainWindow() {
     mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize(),
   );
   ipcMain.on("close", () => mainWindow.close());
-
-  // mainWindow.webContents.openDevTools();
-
-  // let i = 0;
-  // setInterval(() => setBadgeCount((++i % 30) + 1), 1000);
 }
 
 /**
