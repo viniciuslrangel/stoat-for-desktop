@@ -37,7 +37,16 @@ let statusTarget: WebContents | null = null;
 
 export function setUpdateStatusTarget(contents: WebContents | null) {
   statusTarget = contents;
-  broadcastStatus();
+  if (!contents || contents.isDestroyed()) {
+    return;
+  }
+
+  // Avoid pushing status during initial navigation; renderer mounts after SPA boot.
+  setTimeout(() => {
+    if (statusTarget === contents && !contents.isDestroyed()) {
+      broadcastStatus();
+    }
+  }, 500);
 }
 
 function broadcastStatus() {

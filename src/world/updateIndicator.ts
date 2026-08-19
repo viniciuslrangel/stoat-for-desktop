@@ -244,9 +244,37 @@ function createIndicatorUi(
 
 let mountedHost: HTMLElement | null = null;
 let ui: { update: (next: UpdateStatus) => void } | null = null;
+let pendingStatus: UpdateStatus | null = null;
+let mountQueued = false;
+
+function whenDomReady(callback: () => void) {
+  const run = () => {
+    // Defer past the current frame so SPA routers (Solid) can finish mounting.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(callback);
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run, { once: true });
+    return;
+  }
+
+  run();
+}
 
 async function mountIndicator(initial?: UpdateStatus) {
-  const info = initial ?? (await getUpdateStatus());
+  if (initial) {
+    pendingStatus = initial;
+  }
+
+  if (!document.body) {
+    scheduleMount();
+    return;
+  }
+
+  const info = pendingStatus ?? (await getUpdateStatus());
+  pendingStatus = null;
 
   if (!mountedHost) {
     mountedHost = document.createElement("div");
@@ -259,8 +287,24 @@ async function mountIndicator(initial?: UpdateStatus) {
   ui?.update(info);
 }
 
+function scheduleMount(status?: UpdateStatus) {
+  if (status) {
+    pendingStatus = status;
+  }
+
+  if (mountQueued) {
+    return;
+  }
+
+  mountQueued = true;
+  whenDomReady(() => {
+    mountQueued = false;
+    void mountIndicator();
+  });
+}
+
 ipcRenderer.on("update-status", (_event, next: UpdateStatus) => {
-  void mountIndicator(next);
+  scheduleMount(next);
 });
 
-void mountIndicator();
+scheduleMount();

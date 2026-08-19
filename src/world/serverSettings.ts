@@ -271,6 +271,34 @@ let mountedHost: HTMLElement | null = null;
 let ui: { update: (info: ServerUrlInfo) => void } | null = null;
 let mountPolls = 0;
 const MAX_MOUNT_POLLS = 15;
+let syncQueued = false;
+
+function whenDomReady(callback: () => void) {
+  const run = () => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(callback);
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run, { once: true });
+    return;
+  }
+
+  run();
+}
+
+function scheduleSyncSettingsUi() {
+  if (syncQueued) {
+    return;
+  }
+
+  syncQueued = true;
+  whenDomReady(() => {
+    syncQueued = false;
+    void syncSettingsUi();
+  });
+}
 
 async function syncSettingsUi() {
   if (!shouldShowServerSettings()) {
@@ -299,16 +327,10 @@ async function syncSettingsUi() {
 }
 
 hookNavigation(() => {
-  void syncSettingsUi();
+  scheduleSyncSettingsUi();
 });
 
-window.addEventListener("DOMContentLoaded", () => {
-  void syncSettingsUi();
-});
-
-if (document.readyState !== "loading") {
-  void syncSettingsUi();
-}
+scheduleSyncSettingsUi();
 
 // Poll only until mounted (SPA may hydrate late); avoid overwriting user input afterward.
 window.setInterval(() => {
@@ -316,5 +338,5 @@ window.setInterval(() => {
     return;
   }
   mountPolls += 1;
-  void syncSettingsUi();
+  scheduleSyncSettingsUi();
 }, 1000);

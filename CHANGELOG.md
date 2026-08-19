@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.107.6](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.5...v1.107.6) (2026-08-19)
+
+
+### Bug Fixes
+
+* defer overlay DOM injection until after SPA mount to prevent blank screen on reopen
+
 ## [1.107.5](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.4...v1.107.5) (2026-08-19)
 
 
