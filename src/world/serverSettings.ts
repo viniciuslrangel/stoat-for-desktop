@@ -1,11 +1,29 @@
 const ROOT_ID = "stoat-desktop-server-settings";
 
-function isLoginPage(): boolean {
+/** Match Stoat web client auth/onboarding routes (SPA paths vary by host and base URL). */
+function shouldShowServerSettings(): boolean {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  return path === "/login" || path.endsWith("/login");
+
+  if (path === "/" || path === "/app" || path.endsWith("/app")) {
+    return true;
+  }
+
+  if (
+    path === "/login" ||
+    path.startsWith("/login/") ||
+    path.endsWith("/login")
+  ) {
+    return true;
+  }
+
+  if (path.includes("/login")) {
+    return true;
+  }
+
+  return false;
 }
 
-function hookHistory(callback: () => void) {
+function hookNavigation(callback: () => void) {
   const wrap = <T extends History["pushState"]>(method: T): T =>
     ((...args: Parameters<T>) => {
       const result = method(...args);
@@ -16,6 +34,7 @@ function hookHistory(callback: () => void) {
   history.pushState = wrap(history.pushState);
   history.replaceState = wrap(history.replaceState);
   window.addEventListener("popstate", callback);
+  window.addEventListener("hashchange", callback);
 }
 
 function createSettingsUi(
@@ -34,8 +53,28 @@ function createSettingsUi(
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
 
+      .fab {
+        appearance: none;
+        border: 0;
+        background: #5865f2;
+        color: white;
+        width: 44px;
+        height: 44px;
+        border-radius: 22px;
+        cursor: pointer;
+        font-size: 20px;
+        line-height: 1;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+      }
+
+      .fab:hover {
+        background: #4752c4;
+      }
+
       .panel {
+        display: none;
         width: 320px;
+        margin-bottom: 10px;
         border-radius: 12px;
         background: #1e1e1e;
         color: #f2f2f2;
@@ -44,44 +83,20 @@ function createSettingsUi(
         overflow: hidden;
       }
 
+      .panel.open {
+        display: block;
+      }
+
       .header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
         padding: 12px 14px;
         background: #191919;
         border-bottom: 1px solid #333;
-      }
-
-      .title {
         font-size: 13px;
         font-weight: 600;
       }
 
-      .toggle {
-        appearance: none;
-        border: 0;
-        background: #2a2a2a;
-        color: inherit;
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 16px;
-        line-height: 1;
-      }
-
-      .toggle:hover {
-        background: #333;
-      }
-
       .body {
-        display: none;
         padding: 14px;
-      }
-
-      .body.open {
-        display: block;
       }
 
       label {
@@ -112,21 +127,18 @@ function createSettingsUi(
         margin-top: 12px;
       }
 
-      button {
+      button.save {
         appearance: none;
         border: 0;
         border-radius: 8px;
         padding: 8px 12px;
         font-size: 13px;
         cursor: pointer;
-      }
-
-      .save {
         background: #5865f2;
         color: white;
       }
 
-      .save:disabled {
+      button.save:disabled {
         opacity: 0.65;
         cursor: default;
       }
@@ -145,33 +157,39 @@ function createSettingsUi(
       .error {
         color: #ff7b72;
       }
+
+      .wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
     </style>
-    <div class="panel">
-      <div class="header">
-        <span class="title">Server settings</span>
-        <button class="toggle" type="button" aria-label="Toggle server settings">⚙</button>
-      </div>
-      <div class="body">
-        <label for="stoat-server-url">Server URL</label>
-        <input id="stoat-server-url" type="url" spellcheck="false" />
-        <div class="actions">
-          <button class="save" type="button">Save</button>
+    <div class="wrap">
+      <div class="panel">
+        <div class="header">Server settings</div>
+        <div class="body">
+          <label for="stoat-server-url">Server URL</label>
+          <input id="stoat-server-url" type="url" spellcheck="false" placeholder="https://stoat.viniciusrangel.dev" />
+          <div class="actions">
+            <button class="save" type="button">Save</button>
+          </div>
+          <div class="hint"></div>
+          <div class="error"></div>
         </div>
-        <div class="hint"></div>
-        <div class="error"></div>
       </div>
+      <button class="fab" type="button" aria-label="Server settings" title="Server settings">⚙</button>
     </div>
   `;
 
-  const toggle = shadow.querySelector(".toggle") as HTMLButtonElement;
-  const body = shadow.querySelector(".body") as HTMLDivElement;
+  const panel = shadow.querySelector(".panel") as HTMLDivElement;
+  const fab = shadow.querySelector(".fab") as HTMLButtonElement;
   const input = shadow.querySelector("#stoat-server-url") as HTMLInputElement;
   const save = shadow.querySelector(".save") as HTMLButtonElement;
   const hint = shadow.querySelector(".hint") as HTMLDivElement;
   const error = shadow.querySelector(".error") as HTMLDivElement;
 
-  toggle.addEventListener("click", () => {
-    body.classList.toggle("open");
+  fab.addEventListener("click", () => {
+    panel.classList.toggle("open");
   });
 
   function applyInfo(next: ServerUrlInfo) {
@@ -222,7 +240,7 @@ let mountedHost: HTMLElement | null = null;
 let ui: { update: (info: ServerUrlInfo) => void } | null = null;
 
 async function syncSettingsUi() {
-  if (!isLoginPage()) {
+  if (!shouldShowServerSettings()) {
     mountedHost?.remove();
     mountedHost = null;
     ui = null;
@@ -242,7 +260,7 @@ async function syncSettingsUi() {
   ui?.update(info);
 }
 
-hookHistory(() => {
+hookNavigation(() => {
   void syncSettingsUi();
 });
 
@@ -253,3 +271,13 @@ window.addEventListener("DOMContentLoaded", () => {
 if (document.readyState !== "loading") {
   void syncSettingsUi();
 }
+
+// SPA may navigate after first paint without an immediate history event.
+const pollMs = 500;
+const pollUntil = Date.now() + 15_000;
+const pollTimer = window.setInterval(() => {
+  void syncSettingsUi();
+  if (Date.now() >= pollUntil) {
+    window.clearInterval(pollTimer);
+  }
+}, pollMs);
