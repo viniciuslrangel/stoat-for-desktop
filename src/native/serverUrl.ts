@@ -1,6 +1,6 @@
 import { URL } from "node:url";
 
-import { app, ipcMain, session } from "electron";
+import { app, BrowserWindow, ipcMain, session, WebContents } from "electron";
 
 import { DEFAULT_SERVER_URL } from "../constants";
 
@@ -68,12 +68,25 @@ export function validateServerUrl(input: string): string {
   return url.toString();
 }
 
-async function reloadToServerUrl(): Promise<void> {
-  const { mainWindow } = await import("./window");
+function getNormalizedResolvedServerUrl(): string {
+  return validateServerUrl(getResolvedServerUrl());
+}
+
+/** Navigate the window to the configured server URL (clears session/cache). */
+export async function navigateToConfiguredServer(
+  webContents?: WebContents,
+): Promise<void> {
+  const window =
+    (webContents && BrowserWindow.fromWebContents(webContents)) ||
+    BrowserWindow.getAllWindows()[0];
+
+  if (!window) {
+    throw new Error("No browser window available");
+  }
 
   await session.defaultSession.clearStorageData();
   await session.defaultSession.clearCache();
-  mainWindow.loadURL(getStartupUrl());
+  await window.loadURL(getStartupUrl());
 }
 
 let serverUrlIpcInitialized = false;
@@ -110,13 +123,15 @@ export function initServerUrlIpc(): void {
       };
     }
 
-    const previous = getResolvedServerUrl();
+    const previous = getNormalizedResolvedServerUrl();
     config.serverUrl = normalized === DEFAULT_SERVER_URL ? null : normalized;
 
-    if (normalized !== previous) {
-      await reloadToServerUrl();
+    const reloaded = normalized !== previous;
+
+    if (reloaded) {
+      await navigateToConfiguredServer(_event.sender);
     }
 
-    return { ok: true, url: getResolvedServerUrl() };
+    return { ok: true, url: getResolvedServerUrl(), reloaded };
   });
 }
