@@ -1,6 +1,7 @@
 import { ipcRenderer } from "electron";
 
 const ROOT_ID = "stoat-desktop-update-indicator";
+const SLOT_ID = "stoat-desktop-update-slot";
 
 function getUpdateStatus(): Promise<UpdateStatus> {
   return ipcRenderer.invoke("getUpdateStatus");
@@ -66,17 +67,22 @@ function createIndicatorUi(
     <style>
       :host {
         all: initial;
-        position: fixed;
-        left: 16px;
-        bottom: 16px;
-        z-index: 2147483646;
+        display: inline-flex;
+        position: relative;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
 
+      :host([data-fallback]) {
+        position: fixed;
+        top: 40px;
+        right: 16px;
+        z-index: 2147483646;
+      }
+
       .wrap {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
       }
 
       .pill {
@@ -84,19 +90,20 @@ function createIndicatorUi(
         border: 0;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         border-radius: 999px;
-        padding: 8px 12px;
-        font-size: 12px;
+        padding: 6px 10px;
+        font-size: 11px;
         font-weight: 600;
         color: white;
         cursor: pointer;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        white-space: nowrap;
       }
 
       .dot {
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.95);
         flex-shrink: 0;
@@ -104,14 +111,17 @@ function createIndicatorUi(
 
       .panel {
         display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
         width: 300px;
-        margin-bottom: 10px;
         border-radius: 12px;
         background: #1e1e1e;
         color: #f2f2f2;
         border: 1px solid #333;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
         overflow: hidden;
+        z-index: 1;
       }
 
       .panel.open {
@@ -119,11 +129,32 @@ function createIndicatorUi(
       }
 
       .header {
-        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 12px;
         background: #191919;
         border-bottom: 1px solid #333;
         font-size: 13px;
         font-weight: 600;
+      }
+
+      .close {
+        appearance: none;
+        border: 0;
+        border-radius: 6px;
+        padding: 2px 6px;
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+        background: transparent;
+        color: #bdbdbd;
+      }
+
+      .close:hover {
+        background: #2a2a2a;
+        color: #f2f2f2;
       }
 
       .body {
@@ -176,8 +207,15 @@ function createIndicatorUi(
       }
     </style>
     <div class="wrap">
+      <button class="pill" type="button" aria-label="App update status">
+        <span class="dot"></span>
+        <span class="label"></span>
+      </button>
       <div class="panel">
-        <div class="header">App updates</div>
+        <div class="header">
+          <span>App updates</span>
+          <button class="close" type="button" aria-label="Close update panel">×</button>
+        </div>
         <div class="body">
           <div class="meta"></div>
           <div class="message"></div>
@@ -188,10 +226,6 @@ function createIndicatorUi(
           </div>
         </div>
       </div>
-      <button class="pill" type="button" aria-label="App update status">
-        <span class="dot"></span>
-        <span class="label"></span>
-      </button>
     </div>
   `;
 
@@ -204,6 +238,7 @@ function createIndicatorUi(
   const notes = shadow.querySelector(".notes") as HTMLDivElement;
   const checkBtn = shadow.querySelector(".check") as HTMLButtonElement;
   const installBtn = shadow.querySelector(".install") as HTMLButtonElement;
+  const closeBtn = shadow.querySelector(".close") as HTMLButtonElement;
 
   function applyStatus(next: UpdateStatus) {
     const color = stateColor(next.state);
@@ -225,8 +260,17 @@ function createIndicatorUi(
 
   applyStatus(initial);
 
+  function closePanel() {
+    panel.classList.remove("open");
+  }
+
   pill.addEventListener("click", () => {
     panel.classList.toggle("open");
+  });
+
+  closeBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closePanel();
   });
 
   checkBtn.addEventListener("click", async () => {
@@ -246,10 +290,48 @@ let mountedHost: HTMLElement | null = null;
 let ui: { update: (next: UpdateStatus) => void } | null = null;
 let pendingStatus: UpdateStatus | null = null;
 let mountQueued = false;
+let slotObserver: MutationObserver | null = null;
+
+function findSlot(): HTMLElement | null {
+  return document.getElementById(SLOT_ID);
+}
+
+function attachHost(host: HTMLElement) {
+  const slot = findSlot();
+
+  if (slot) {
+    host.removeAttribute("data-fallback");
+    if (host.parentElement !== slot) {
+      slot.replaceChildren(host);
+    }
+    return;
+  }
+
+  host.setAttribute("data-fallback", "");
+  if (host.parentElement !== document.body) {
+    document.body.appendChild(host);
+  }
+}
+
+function ensureSlotObserver() {
+  if (slotObserver || !document.body) {
+    return;
+  }
+
+  slotObserver = new MutationObserver(() => {
+    if (mountedHost) {
+      attachHost(mountedHost);
+    }
+  });
+
+  slotObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
 
 function whenDomReady(callback: () => void) {
   const run = () => {
-    // Defer past the current frame so SPA routers (Solid) can finish mounting.
     requestAnimationFrame(() => {
       requestAnimationFrame(callback);
     });
@@ -279,12 +361,13 @@ async function mountIndicator(initial?: UpdateStatus) {
   if (!mountedHost) {
     mountedHost = document.createElement("div");
     mountedHost.id = ROOT_ID;
-    document.body.appendChild(mountedHost);
     ui = createIndicatorUi(mountedHost, info);
-    return;
+    ensureSlotObserver();
+  } else {
+    ui?.update(info);
   }
 
-  ui?.update(info);
+  attachHost(mountedHost);
 }
 
 function scheduleMount(status?: UpdateStatus) {
