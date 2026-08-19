@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.108.2](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.1...v1.108.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* portal update panel to body for z-index ([19a90d5](https://github.com/viniciuslrangel/stoat-for-desktop/commit/19a90d5f1d2d597c7acabe20cbd183951a277b6e))
+* portal update panel to body for z-index ([a8f7948](https://github.com/viniciuslrangel/stoat-for-desktop/commit/a8f7948ea42957c2562d368d2a4e9db7988f02d4))
+
 ## [1.108.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.0...v1.108.1) (2026-08-19)
 
 
