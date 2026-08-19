@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.107.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.6.0...v1.107.1) (2026-08-19)
+
+
+### Bug Fixes
+
+* show server settings on all login routes and /app entry ([dbd9b8b](https://github.com/viniciuslrangel/stoat-for-desktop/commit/dbd9b8b9d42586de34760fa1880fbba65c457e7e))
+
 ## [1.6.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.5.2...v1.6.0) (2026-08-19)
 
 
