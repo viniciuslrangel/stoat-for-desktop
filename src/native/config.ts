@@ -28,6 +28,9 @@ const schema = {
   discordRpc: {
     type: "boolean",
   } as JSONSchema.Boolean,
+  serverUrl: {
+    type: ["string", "null"],
+  } as JSONSchema.String,
   windowState: {
     type: "object",
     properties: {
@@ -60,6 +63,7 @@ const store = new Store({
     spellchecker: true,
     hardwareAcceleration: true,
     discordRpc: true,
+    serverUrl: null,
     windowState: {
       x: 0,
       y: 0,
@@ -83,6 +87,7 @@ class Config {
       spellchecker: this.spellchecker,
       hardwareAcceleration: this.hardwareAcceleration,
       discordRpc: this.discordRpc,
+      serverUrl: this.serverUrl,
       windowState: this.windowState,
     });
   }
@@ -188,6 +193,22 @@ class Config {
       "discordRpc",
       value,
     );
+
+    this.sync();
+  }
+
+  get serverUrl() {
+    return (
+      store as never as { get(k: string): DesktopConfig["serverUrl"] }
+    ).get("serverUrl");
+  }
+
+  set serverUrl(value: DesktopConfig["serverUrl"]) {
+    (
+      store as never as {
+        set(k: string, value: DesktopConfig["serverUrl"]): void;
+      }
+    ).set("serverUrl", value);
 
     this.sync();
   }

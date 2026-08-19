@@ -7,7 +7,8 @@ import { config } from "./native/config";
 import { initDiscordRpc } from "./native/discordRpc";
 import { initTray } from "./native/tray";
 import { initVirtualMic } from "./native/virtualMic";
-import { BUILD_URL, createMainWindow, mainWindow } from "./native/window";
+import { getBuildOrigin, initServerUrlIpc } from "./native/serverUrl";
+import { createMainWindow, mainWindow } from "./native/window";
 
 // Squirrel-specific logic
 // create/remove shortcuts on Windows when installing / uninstalling
@@ -40,6 +41,8 @@ if (acquiredLock) {
 
   // create and configure the app when electron is ready
   app.on("ready", () => {
+    initServerUrlIpc();
+
     // create window and application contexts
     createMainWindow();
 
@@ -89,7 +92,7 @@ if (acquiredLock) {
   app.on("web-contents-created", (_, contents) => {
     // prevent navigation out of build URL origin
     contents.on("will-navigate", (event, navigationUrl) => {
-      if (new URL(navigationUrl).origin !== BUILD_URL.origin) {
+      if (new URL(navigationUrl).origin !== getBuildOrigin()) {
         event.preventDefault();
       }
     });

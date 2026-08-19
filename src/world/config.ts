@@ -13,4 +13,10 @@ contextBridge.exposeInMainWorld("desktopConfig", {
   setAutostart(value: boolean) {
     return ipcRenderer.invoke("setAutostart", value) as Promise<boolean>;
   },
+  getServerUrl() {
+    return ipcRenderer.invoke("getServerUrl") as Promise<ServerUrlInfo>;
+  },
+  setServerUrl(url: string) {
+    return ipcRenderer.invoke("setServerUrl", url) as Promise<SetServerUrlResult>;
+  },
 });

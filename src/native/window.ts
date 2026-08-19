@@ -14,24 +14,11 @@ import {
 import windowIconAsset from "../../assets/desktop/icon.png?asset";
 
 import { config } from "./config";
+import { getStartupUrl } from "./serverUrl";
 import { updateTrayMenu } from "./tray";
 
 // global reference to main window
 export let mainWindow: BrowserWindow;
-
-// currently in-use build
-export const BUILD_URL = new URL(
-  app.commandLine.hasSwitch("force-server")
-    ? app.commandLine.getSwitchValue("force-server")
-    : /*MAIN_WINDOW_VITE_DEV_SERVER_URL ??*/ "https://stoat.chat/app",
-);
-
-/** Startup URL with a version query param to bust stale caches after app updates. */
-function getStartupUrl(): string {
-  const url = new URL(BUILD_URL.toString());
-  url.searchParams.set("v", app.getVersion());
-  return url.toString();
-}
 
 // internal window state
 let shouldQuit = false;
