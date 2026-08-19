@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.107.2](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.107.1...v1.107.2) (2026-08-19)
+
+
+### Bug Fixes
+
+* server settings UI use ipcRenderer in preload (desktopConfig is renderer-only)
+
 ## [1.107.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.6.0...v1.107.1) (2026-08-19)
 
 

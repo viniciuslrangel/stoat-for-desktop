@@ -1,32 +1,36 @@
+import { ipcRenderer } from "electron";
+
 const ROOT_ID = "stoat-desktop-server-settings";
 
-/** Match Stoat web client auth/onboarding routes (SPA paths vary by host and base URL). */
+function getServerUrl(): Promise<ServerUrlInfo> {
+  return ipcRenderer.invoke("getServerUrl");
+}
+
+function setServerUrl(url: string): Promise<SetServerUrlResult> {
+  return ipcRenderer.invoke("setServerUrl", url);
+}
+
+/** Show on auth/landing routes; always show if path is unknown (desktop-only overlay). */
 function shouldShowServerSettings(): boolean {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
 
-  if (path === "/" || path === "/app" || path.endsWith("/app")) {
-    return true;
-  }
-
+  // Logged-in app areas — hide to avoid clutter
   if (
-    path === "/login" ||
-    path.startsWith("/login/") ||
-    path.endsWith("/login")
+    path.includes("/channel/") ||
+    path.includes("/server/") ||
+    path.includes("/settings") ||
+    path.startsWith("/bot/")
   ) {
-    return true;
+    return false;
   }
 
-  if (path.includes("/login")) {
-    return true;
-  }
-
-  return false;
+  return true;
 }
 
 function hookNavigation(callback: () => void) {
   const wrap = <T extends History["pushState"]>(method: T): T =>
     ((...args: Parameters<T>) => {
-      const result = method(...args);
+      const result = method.apply(history, args);
       callback();
       return result;
     }) as T;
@@ -79,7 +83,7 @@ function createSettingsUi(
         background: #1e1e1e;
         color: #f2f2f2;
         border: 1px solid #333;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
         overflow: hidden;
       }
 
@@ -215,7 +219,7 @@ function createSettingsUi(
     error.textContent = "";
     save.disabled = true;
 
-    const result = await window.desktopConfig.setServerUrl(input.value.trim());
+    const result = await setServerUrl(input.value.trim());
 
     if (!result.ok) {
       error.textContent = result.error;
@@ -247,17 +251,21 @@ async function syncSettingsUi() {
     return;
   }
 
-  const info = await window.desktopConfig.getServerUrl();
+  try {
+    const info = await getServerUrl();
 
-  if (!mountedHost) {
-    mountedHost = document.createElement("div");
-    mountedHost.id = ROOT_ID;
-    document.documentElement.appendChild(mountedHost);
-    ui = createSettingsUi(mountedHost, info);
-    return;
+    if (!mountedHost) {
+      mountedHost = document.createElement("div");
+      mountedHost.id = ROOT_ID;
+      document.body.appendChild(mountedHost);
+      ui = createSettingsUi(mountedHost, info);
+      return;
+    }
+
+    ui?.update(info);
+  } catch (err) {
+    console.error("[stoat-desktop] server settings UI failed:", err);
   }
-
-  ui?.update(info);
 }
 
 hookNavigation(() => {
@@ -272,12 +280,7 @@ if (document.readyState !== "loading") {
   void syncSettingsUi();
 }
 
-// SPA may navigate after first paint without an immediate history event.
-const pollMs = 500;
-const pollUntil = Date.now() + 15_000;
-const pollTimer = window.setInterval(() => {
+// Keep polling while on auth/landing pages (SPA may hydrate late).
+window.setInterval(() => {
   void syncSettingsUi();
-  if (Date.now() >= pollUntil) {
-    window.clearInterval(pollTimer);
-  }
-}, pollMs);
+}, 1000);
