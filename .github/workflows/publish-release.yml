@@ -1,0 +1,124 @@
+name: Publish Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-release
+  cancel-in-progress: true
+
+jobs:
+  publish-release:
+    name: Publish App
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-latest, macos-26-intel]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+          submodules: recursive
+
+      - name: Checkout assets
+        run: git -c submodule."assets".update=checkout submodule update --init assets
+
+      - name: Install Flatpak Tooling and Runtimes
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add -u --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y -u flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
+          flatpak install -y -u flathub org.electronjs.Electron2.BaseApp//stable
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm ci
+
+      - name: Publish
+        run: pnpm run publish
+        env:
+          PLATFORM: ${{ matrix.os }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact for AppImage build
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
+        uses: actions/upload-artifact@v6
+        with:
+          name: stoat-linux-package-${{ case(matrix.os == 'ubuntu-latest', 'x64', 'arm64') }}
+          path: ./out/make/zip/linux/${{ case(matrix.os == 'ubuntu-latest', 'x64', 'arm64') }}/Stoat-linux-*.zip
+
+  build-appimage:
+    needs: publish-release
+    if: github.event_name == 'release'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    container: ghcr.io/pkgforge-dev/archlinux:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: stoat-linux-package-${{ case(matrix.os == 'ubuntu-latest', 'x64', 'arm64') }}
+          path: /tmp/stoat
+
+      - name: Preparing Container
+        uses: pkgforge-dev/anylinux-setup-action@0964f2258d6c93d1391359978dde081fd8b3c6af # v2
+
+      - name: Install Dependencies
+        run: /bin/sh ./.github/build/appimage/get-dependencies.sh
+
+      - name: Extract Artifact
+        run: /bin/sh ./.github/build/appimage/extract-artifact.sh
+        env:
+          BUILD_ARCH: ${{ case(matrix.os == 'ubuntu-latest', 'x64', 'arm64') }}
+          BUILD_VERSION: ${{ github.event.release.tag_name }}
+
+      - name: Make & Test AppImage
+        run: /bin/sh ./.github/build/appimage/make-appimage.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: AppImage-${{ case(matrix.os == 'ubuntu-latest', 'x64', 'arm64') }}
+          path: dist
+
+  publish-appimage:
+    runs-on: ubuntu-latest
+    needs: build-appimage
+    if: github.event_name == 'release'
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v7
+        with:
+          pattern: AppImage-*
+          merge-multiple: true
+
+      - name: Update release with AppImage
+        run: gh release upload "${{ github.event.release.tag_name }}" Stoat-*.AppImage*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
