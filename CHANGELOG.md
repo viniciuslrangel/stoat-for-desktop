@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.108.3](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.2...v1.108.3) (2026-08-19)
+
+
+### Bug Fixes
+
+* reload webview when server URL changes on save ([87b6e44](https://github.com/viniciuslrangel/stoat-for-desktop/commit/87b6e4424d39b12ec97dd9f36d2e2da392a87bf6))
+
 ## [1.108.2](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.1...v1.108.2) (2026-08-19)
 
 
