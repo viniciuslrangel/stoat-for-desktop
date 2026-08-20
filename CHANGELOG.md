@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.110.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.109.0...v1.110.0) (2026-08-20)
+
+
+### Features
+
+* rebrand desktop app display name to Stoat VR ([c97ce41](https://github.com/viniciuslrangel/stoat-for-desktop/commit/c97ce4110d527908c9f7e3f24b30e8819cf52113))
+* rebrand desktop app display name to Stoat VR ([e675da5](https://github.com/viniciuslrangel/stoat-for-desktop/commit/e675da5b234ad80b874cb18cd039f03ba1d59582))
+
 ## [1.109.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.4...v1.109.0) (2026-08-20)
 
 
