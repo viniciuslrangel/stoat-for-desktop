@@ -2,7 +2,7 @@
 export const APP = {
   /** Window title, tray, notifications, settings headers. */
   displayName: "Stoat VR",
-  /** Packager artifact base name (keeps CI release globs stable). */
+  /** NuGet/Squirrel package ID and packager artifact base name (no spaces). */
   packageName: "Stoat",
   execName: "stoat-desktop",
   author: "Revolt Platforms LTD",
