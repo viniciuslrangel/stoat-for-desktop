@@ -23,7 +23,8 @@ const ASSET_DIR = "assets/desktop";
  */
 const makers: ForgeConfig["makers"] = [
   new MakerSquirrel({
-    name: APP.displayName,
+    name: APP.packageName,
+    title: APP.displayName,
     authors: APP.author,
     // todo: hoist this
     iconUrl: `https://stoat.chat/app/assets/icon-DUSNE-Pb.ico`,
