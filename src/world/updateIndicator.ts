@@ -17,6 +17,10 @@ function installDownloadedUpdate(): Promise<void> {
   return ipcRenderer.invoke("installDownloadedUpdate");
 }
 
+function dismissUpdateError(): Promise<UpdateStatus> {
+  return ipcRenderer.invoke("dismissUpdateError");
+}
+
 function stateLabel(state: UpdateStatus["state"]): string {
   switch (state) {
     case "checking":
@@ -131,6 +135,26 @@ const PANEL_STYLES = `
     margin-bottom: 10px;
   }
 
+  .detail {
+    margin: 0 0 10px;
+    color: #9a9a9a;
+  }
+
+  .detail summary {
+    cursor: pointer;
+    color: #bdbdbd;
+    font-size: 11px;
+  }
+
+  .detail pre {
+    margin: 8px 0 0;
+    max-height: 96px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
   .notes {
     max-height: 120px;
     overflow: auto;
@@ -232,9 +256,14 @@ function createIndicatorUi(
       <div class="body">
         <div class="meta"></div>
         <div class="message"></div>
+        <details class="detail" hidden>
+          <summary>Technical details</summary>
+          <pre></pre>
+        </details>
         <div class="notes"></div>
         <div class="actions">
           <button class="check" type="button">Check now</button>
+          <button class="dismiss secondary" type="button" hidden>Dismiss</button>
           <button class="install success" type="button" hidden>Restart to install</button>
         </div>
       </div>
@@ -247,12 +276,16 @@ function createIndicatorUi(
   const panel = panelShadow.querySelector(".panel") as HTMLDivElement;
   const meta = panelShadow.querySelector(".meta") as HTMLDivElement;
   const message = panelShadow.querySelector(".message") as HTMLDivElement;
+  const detail = panelShadow.querySelector(".detail") as HTMLDetailsElement;
+  const detailPre = panelShadow.querySelector(".detail pre") as HTMLPreElement;
   const notes = panelShadow.querySelector(".notes") as HTMLDivElement;
   const checkBtn = panelShadow.querySelector(".check") as HTMLButtonElement;
+  const dismissBtn = panelShadow.querySelector(".dismiss") as HTMLButtonElement;
   const installBtn = panelShadow.querySelector(".install") as HTMLButtonElement;
   const closeBtn = panelShadow.querySelector(".close") as HTMLButtonElement;
 
   let panelOpen = false;
+  let lastLoggedDetail: string | null = null;
 
   function positionPanel() {
     const rect = pill.getBoundingClientRect();
@@ -271,12 +304,30 @@ function createIndicatorUi(
       next.availableVersion ? ` · Available: v${next.availableVersion}` : ""
     }`;
     message.textContent = next.message ?? "";
+    const showDetail = next.state === "error" && Boolean(next.detail);
+    detail.hidden = !showDetail;
+    if (!showDetail) {
+      detail.open = false;
+    }
+    detailPre.textContent = next.detail ?? "";
     notes.textContent = next.releaseNotes ?? "";
     notes.hidden = !next.releaseNotes;
 
     installBtn.hidden = next.state !== "downloaded";
+    dismissBtn.hidden = next.state !== "error";
     checkBtn.disabled =
       next.state === "checking" || next.state === "downloading";
+
+    if (
+      next.state === "error" &&
+      next.detail &&
+      next.detail !== lastLoggedDetail
+    ) {
+      lastLoggedDetail = next.detail;
+      console.warn("[stoat-desktop] update error:", next.message, next.detail);
+    } else if (next.state !== "error") {
+      lastLoggedDetail = null;
+    }
   }
 
   applyStatus(initial);
@@ -329,6 +380,12 @@ function createIndicatorUi(
     checkBtn.disabled = true;
     const next = await checkForUpdatesNow();
     applyStatus(next);
+  });
+
+  dismissBtn.addEventListener("click", async () => {
+    const next = await dismissUpdateError();
+    applyStatus(next);
+    closePanel();
   });
 
   installBtn.addEventListener("click", () => {

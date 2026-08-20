@@ -5,6 +5,8 @@ import { Notification, type WebContents, app, autoUpdater } from "electron";
 import { version as appVersion } from "../../package.json";
 import { APP } from "../../strings";
 
+import { describeUpdateError } from "./updateError";
+
 export type UpdateState =
   | "unsupported"
   | "dev"
@@ -21,6 +23,7 @@ export type UpdateStatus = {
   currentVersion: string;
   availableVersion: string | null;
   message: string | null;
+  detail: string | null;
   releaseNotes: string | null;
   lastCheckedAt: number | null;
 };
@@ -30,6 +33,7 @@ let status: UpdateStatus = {
   currentVersion: appVersion,
   availableVersion: null,
   message: null,
+  detail: null,
   releaseNotes: null,
   lastCheckedAt: null,
 };
@@ -58,14 +62,10 @@ function broadcastStatus() {
 
 function setStatus(partial: Partial<UpdateStatus>) {
   status = { ...status, ...partial };
-  broadcastStatus();
-}
-
-function formatError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
+  if (status.state !== "error") {
+    status.detail = null;
   }
-  return String(error);
+  broadcastStatus();
 }
 
 export function getUpdateStatus(): UpdateStatus {
@@ -94,6 +94,18 @@ export function checkForUpdatesNow(): void {
 
 export function installDownloadedUpdate(): void {
   autoUpdater.quitAndInstall();
+}
+
+export function dismissUpdateError(): void {
+  if (status.state !== "error") {
+    return;
+  }
+
+  setStatus({
+    state: app.isPackaged ? "idle" : "dev",
+    message: null,
+    detail: null,
+  });
 }
 
 export function initAutoUpdate(): void {
@@ -173,10 +185,13 @@ export function initAutoUpdate(): void {
     });
   });
 
-  autoUpdater.on("error", (_, message) => {
+  autoUpdater.on("error", (error, extra) => {
+    const described = describeUpdateError(error, extra);
+    console.error("[stoat-desktop] auto-update failed", error, extra);
     setStatus({
       state: "error",
-      message: formatError(message),
+      message: described.userMessage,
+      detail: described.detail,
       lastCheckedAt: Date.now(),
     });
   });

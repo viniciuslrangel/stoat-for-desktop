@@ -5,6 +5,7 @@ import { APP } from "../strings";
 
 import {
   checkForUpdatesNow,
+  dismissUpdateError,
   getUpdateStatus,
   initAutoUpdate,
   installDownloadedUpdate,
@@ -41,6 +42,10 @@ if (acquiredLock) {
   });
   ipcMain.handle("installDownloadedUpdate", () => {
     installDownloadedUpdate();
+  });
+  ipcMain.handle("dismissUpdateError", () => {
+    dismissUpdateError();
+    return getUpdateStatus();
   });
 
   // create and configure the app when electron is ready
