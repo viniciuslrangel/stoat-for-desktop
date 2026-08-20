@@ -43,6 +43,7 @@ declare type UpdateStatus = {
   currentVersion: string;
   availableVersion: string | null;
   message: string | null;
+  detail: string | null;
   releaseNotes: string | null;
   lastCheckedAt: number | null;
 };
