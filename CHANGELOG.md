@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.110.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.110.0...v1.110.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* alphanumeric Squirrel NuGet package ID ([4f2a591](https://github.com/viniciuslrangel/stoat-for-desktop/commit/4f2a5918f9340fc0e7cff681164ab2bd7acb9bfc))
+* keep Squirrel NuGet package ID alphanumeric ([905a6c8](https://github.com/viniciuslrangel/stoat-for-desktop/commit/905a6c8bd0333b41efe33f920a620aeb9c27bc91))
+* show short auto-update errors instead of Squirrel dumps ([61556b5](https://github.com/viniciuslrangel/stoat-for-desktop/commit/61556b56d9593c7a16a642b82d884ccb8bcdc624))
+* show short auto-update errors instead of Squirrel dumps ([9aede8c](https://github.com/viniciuslrangel/stoat-for-desktop/commit/9aede8c4426171fec657b80d8aaff9f133d439fb))
+
 ## [1.110.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.109.0...v1.110.0) (2026-08-20)
 
 

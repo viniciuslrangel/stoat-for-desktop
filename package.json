@@ -1,7 +1,7 @@
 {
   "name": "stoat-desktop",
   "productName": "Stoat VR",
-  "version": "1.110.0",
+  "version": "1.110.1",
   "main": ".vite/build/main.js",
   "repository": "github:viniciuslrangel/stoat-for-desktop",
   "scripts": {
