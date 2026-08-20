@@ -2,8 +2,10 @@ import AutoLaunch from "auto-launch";
 
 import { ipcMain } from "electron";
 
+import { APP } from "../../strings";
+
 export const autoLaunch = new AutoLaunch({
-  name: "Stoat",
+  name: APP.displayName,
 });
 
 ipcMain.handle("getAutostart", async () => {

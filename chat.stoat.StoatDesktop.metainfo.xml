@@ -2,7 +2,7 @@
 <component type="desktop">
   <id>chat.stoat.StoatDesktop</id>
   <launchable type="desktop-id">chat.stoat.StoatDesktop.desktop</launchable>
-  <name>Stoat</name>
+  <name>Stoat VR</name>
   <developer id="chat.stoat">
     <name>Revolt Platforms Ltd</name>
   </developer>
@@ -12,7 +12,7 @@
   <icon type="remote" height="256" width="256">
     https://raw.githubusercontent.com/stoatchat/assets/f106946659af67ad4f008588ac51570029b2fd47/desktop/icon.png</icon>
   <description>
-    <p>Stoat is an open source, user-first chat platform. Send messages, share
+    <p>Stoat VR is an open source, user-first chat platform. Send messages, share
       images, mention users, and join voice channels — all from a native desktop
       application.</p>
   </description>

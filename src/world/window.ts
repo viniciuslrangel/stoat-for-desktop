@@ -1,8 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import { version } from "../../package.json";
+import { APP } from "../../strings";
 
 contextBridge.exposeInMainWorld("native", {
+  appName: () => APP.displayName,
   versions: {
     node: () => process.versions.node,
     chrome: () => process.versions.chrome,

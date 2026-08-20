@@ -1,5 +1,7 @@
 import { ipcRenderer } from "electron";
 
+import { APP } from "../../strings";
+
 const ROOT_ID = "stoat-desktop-server-settings";
 
 const APP_PATH_HINT =
@@ -174,7 +176,7 @@ function createSettingsUi(
     </style>
     <div class="wrap">
       <div class="panel">
-        <div class="header">Server settings</div>
+        <div class="header">${APP.displayName} — Server settings</div>
         <div class="body">
           <label for="stoat-server-url">Server URL</label>
           <input id="stoat-server-url" type="url" spellcheck="false" placeholder="https://stoat.viniciusrangel.dev/app" />
