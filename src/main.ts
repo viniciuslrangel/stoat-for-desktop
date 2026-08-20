@@ -9,6 +9,7 @@ import {
 } from "./native/autoUpdate";
 import { config } from "./native/config";
 import { initDiscordRpc } from "./native/discordRpc";
+import { configureGpu } from "./native/gpuFlags";
 import { getBuildOrigin, initServerUrlIpc } from "./native/serverUrl";
 import { initTray } from "./native/tray";
 import { initVirtualMic } from "./native/virtualMic";
@@ -21,10 +22,7 @@ if (started) {
   app.quit();
 }
 
-// disable hw-accel if so requested
-if (!config.hardwareAcceleration) {
-  app.disableHardwareAcceleration();
-}
+configureGpu(config.hardwareAcceleration);
 
 // ensure only one copy of the application can run
 const acquiredLock = app.requestSingleInstanceLock();
