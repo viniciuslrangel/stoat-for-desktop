@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.109.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.4...v1.109.0) (2026-08-20)
+
+
+### Features
+
+* enable Linux VA-API video decode when hardware acceleration is on ([2b8a15d](https://github.com/viniciuslrangel/stoat-for-desktop/commit/2b8a15d0eefa1a135d68f53800c8c01b7138d748))
+* Linux VA-API video decode for hardware acceleration ([19067be](https://github.com/viniciuslrangel/stoat-for-desktop/commit/19067be796d8cfee287f9c995ae49a98bec79fe3))
+
 ## [1.108.4](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.108.3...v1.108.4) (2026-08-19)
 
 
