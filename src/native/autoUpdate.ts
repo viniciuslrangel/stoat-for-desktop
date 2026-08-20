@@ -3,6 +3,7 @@ import { IUpdateInfo, updateElectronApp } from "update-electron-app";
 import { Notification, type WebContents, app, autoUpdater } from "electron";
 
 import { version as appVersion } from "../../package.json";
+import { APP } from "../../strings";
 
 export type UpdateState =
   | "unsupported"
@@ -123,7 +124,7 @@ export function initAutoUpdate(): void {
 
     const notification = new Notification({
       title: "Update ready",
-      body: "Restart Stoat to install the update.",
+      body: `Restart ${APP.displayName} to install the update.`,
       silent: true,
     });
     notification.show();

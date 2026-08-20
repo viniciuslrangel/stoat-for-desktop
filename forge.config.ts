@@ -12,14 +12,9 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 import fs from "node:fs";
 import path from "node:path";
 
-// import { globSync } from "node:fs";
+import { APP } from "./strings";
 
-const STRINGS = {
-  author: "Revolt Platforms LTD",
-  name: "Stoat",
-  execName: "stoat-desktop",
-  description: "Open source user-first chat platform.",
-};
+// import { globSync } from "node:fs";
 
 const ASSET_DIR = "assets/desktop";
 
@@ -28,24 +23,24 @@ const ASSET_DIR = "assets/desktop";
  */
 const makers: ForgeConfig["makers"] = [
   new MakerSquirrel({
-    name: STRINGS.name,
-    authors: STRINGS.author,
+    name: APP.displayName,
+    authors: APP.author,
     // todo: hoist this
     iconUrl: `https://stoat.chat/app/assets/icon-DUSNE-Pb.ico`,
     // todo: loadingGif
     setupIcon: `${ASSET_DIR}/icon.ico`,
-    description: STRINGS.description,
-    exe: `${STRINGS.execName}.exe`,
-    setupExe: `${STRINGS.execName}-setup.exe`,
+    description: APP.description,
+    exe: `${APP.execName}.exe`,
+    setupExe: `${APP.execName}-setup.exe`,
     copyright: "Copyright (C) 2025 Revolt Platforms LTD",
   }),
   new MakerZIP({}),
   new MakerFlatpak({
     options: {
       id: "chat.stoat.StoatDesktop",
-      description: STRINGS.description,
-      productName: STRINGS.name,
-      productDescription: STRINGS.description,
+      description: APP.description,
+      productName: APP.displayName,
+      productDescription: APP.description,
       runtimeVersion: "25.08",
       icon: {
         "16x16": `${ASSET_DIR}/hicolor/16x16.png`,
@@ -106,14 +101,14 @@ if (!process.env.PLATFORM) {
     // not much use in being published anyhow
     new MakerAppX({
       certPass: "",
-      packageExecutable: `app\\${STRINGS.execName}.exe`,
+      packageExecutable: `app\\${APP.execName}.exe`,
       publisher: "CN=B040CC7E-0016-4AF5-957F-F8977A6CFA3B",
     }),
     // testing purposes
     new MakerDeb({
       options: {
-        productName: STRINGS.name,
-        productDescription: STRINGS.description,
+        productName: APP.displayName,
+        productDescription: APP.description,
         categories: ["Network"],
         icon: `${ASSET_DIR}/icon.png`,
       },
@@ -124,8 +119,8 @@ if (!process.env.PLATFORM) {
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    name: STRINGS.name,
-    executableName: STRINGS.execName,
+    name: APP.packageName,
+    executableName: APP.execName,
     icon:
       process.platform === "darwin"
         ? `${ASSET_DIR}/icon.icon`

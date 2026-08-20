@@ -1,6 +1,8 @@
 import { BrowserWindow, app, ipcMain, shell } from "electron";
 import started from "electron-squirrel-startup";
 
+import { APP } from "../strings";
+
 import {
   checkForUpdatesNow,
   getUpdateStatus,
@@ -21,6 +23,8 @@ import { createMainWindow, mainWindow } from "./native/window";
 if (started) {
   app.quit();
 }
+
+app.setName(APP.displayName);
 
 configureGpu(config.hardwareAcceleration);
 
