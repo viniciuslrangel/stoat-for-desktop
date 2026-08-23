@@ -6,6 +6,10 @@ import { DEFAULT_SERVER_URL } from "../constants";
 
 import { config } from "./config";
 
+export function getClientPath(): string {
+  return config.betaUi ? "/v2" : "/app";
+}
+
 export function getResolvedServerUrl(): string {
   if (app.commandLine.hasSwitch("force-server")) {
     return app.commandLine.getSwitchValue("force-server");
@@ -22,8 +26,13 @@ export function getBuildOrigin(): string {
   return new URL(getResolvedServerUrl()).origin;
 }
 
+function applyClientPath(url: URL): void {
+  url.pathname = getClientPath();
+}
+
 export function getStartupUrl(): string {
   const url = new URL(getResolvedServerUrl());
+  applyClientPath(url);
   url.searchParams.set("v", app.getVersion());
   return url.toString();
 }
@@ -54,7 +63,7 @@ export function validateServerUrl(input: string): string {
 
   const path = url.pathname.replace(/\/+$/, "") || "";
 
-  if (path !== "" && path !== "/" && path !== "/app") {
+  if (path !== "" && path !== "/" && path !== "/app" && path !== "/v2") {
     throw new Error(
       "Server URL must include /app (e.g. https://your-server.com/app)",
     );
@@ -98,40 +107,51 @@ export function initServerUrlIpc(): void {
 
   serverUrlIpcInitialized = true;
   ipcMain.handle("getServerUrl", () => ({
-    url: getResolvedServerUrl(),
+    url: getNormalizedResolvedServerUrl(),
     storedUrl: config.serverUrl,
     defaultUrl: DEFAULT_SERVER_URL,
     overridden: isServerUrlOverridden(),
+    betaUi: config.betaUi,
   }));
 
-  ipcMain.handle("setServerUrl", async (_event, input: string) => {
-    if (isServerUrlOverridden()) {
+  ipcMain.handle(
+    "setServerUrl",
+    async (_event, input: string, betaUi: boolean) => {
+      if (isServerUrlOverridden()) {
+        return {
+          ok: false,
+          error: "Server URL is overridden by --force-server for this session",
+        };
+      }
+
+      let normalized: string;
+
+      try {
+        normalized = validateServerUrl(input);
+      } catch (error) {
+        return {
+          ok: false,
+          error: error instanceof Error ? error.message : "Invalid URL",
+        };
+      }
+
+      const previousStartupUrl = getStartupUrl();
+
+      config.serverUrl = normalized === DEFAULT_SERVER_URL ? null : normalized;
+      config.betaUi = betaUi;
+
+      const reloaded = getStartupUrl() !== previousStartupUrl;
+
+      if (reloaded) {
+        await navigateToConfiguredServer(_event.sender);
+      }
+
       return {
-        ok: false,
-        error: "Server URL is overridden by --force-server for this session",
+        ok: true,
+        url: getNormalizedResolvedServerUrl(),
+        betaUi: config.betaUi,
+        reloaded,
       };
-    }
-
-    let normalized: string;
-
-    try {
-      normalized = validateServerUrl(input);
-    } catch (error) {
-      return {
-        ok: false,
-        error: error instanceof Error ? error.message : "Invalid URL",
-      };
-    }
-
-    const previous = getNormalizedResolvedServerUrl();
-    config.serverUrl = normalized === DEFAULT_SERVER_URL ? null : normalized;
-
-    const reloaded = normalized !== previous;
-
-    if (reloaded) {
-      await navigateToConfiguredServer(_event.sender);
-    }
-
-    return { ok: true, url: getResolvedServerUrl(), reloaded };
-  });
+    },
+  );
 }

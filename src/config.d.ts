@@ -6,6 +6,7 @@ declare type DesktopConfig = {
   spellchecker: boolean;
   hardwareAcceleration: boolean;
   discordRpc: boolean;
+  betaUi: boolean;
   serverUrl: string | null;
   windowState: {
     x: number;
@@ -21,10 +22,11 @@ declare type ServerUrlInfo = {
   storedUrl: string | null;
   defaultUrl: string;
   overridden: boolean;
+  betaUi: boolean;
 };
 
 declare type SetServerUrlResult =
-  | { ok: true; url: string; reloaded: boolean }
+  | { ok: true; url: string; betaUi: boolean; reloaded: boolean }
   | { ok: false; error: string };
 
 declare type UpdateState =

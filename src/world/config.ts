@@ -17,10 +17,11 @@ contextBridge.exposeInMainWorld("desktopConfig", {
   getServerUrl() {
     return ipcRenderer.invoke("getServerUrl") as Promise<ServerUrlInfo>;
   },
-  setServerUrl(url: string) {
+  setServerUrl(url: string, betaUi: boolean) {
     return ipcRenderer.invoke(
       "setServerUrl",
       url,
+      betaUi,
     ) as Promise<SetServerUrlResult>;
   },
 });
