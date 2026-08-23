@@ -52,8 +52,6 @@ function createSettingsUi(
   host: HTMLElement,
   info: ServerUrlInfo,
 ): { update: (info: ServerUrlInfo) => void } {
-  let isEditing = false;
-
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = `
     <style>
@@ -233,20 +231,14 @@ function createSettingsUi(
     panel.classList.toggle("open");
   });
 
-  input.addEventListener("focus", () => {
-    isEditing = true;
-  });
-
-  input.addEventListener("blur", () => {
-    isEditing = false;
-  });
-
-  input.addEventListener("input", () => {
-    isEditing = true;
-  });
+  function hasUnsavedEdits(): boolean {
+    return (
+      input.value.trim() !== info.url || betaUiInput.checked !== info.betaUi
+    );
+  }
 
   function applyInfo(next: ServerUrlInfo, force = false) {
-    if (!force && isEditing) {
+    if (!force && hasUnsavedEdits()) {
       input.disabled = next.overridden;
       betaUiInput.disabled = next.overridden;
       save.disabled = next.overridden;
@@ -269,6 +261,7 @@ function createSettingsUi(
     }
 
     error.textContent = "";
+    info = next;
   }
 
   applyInfo(info, true);
@@ -276,14 +269,12 @@ function createSettingsUi(
   save.addEventListener("click", async () => {
     error.textContent = "";
     save.disabled = true;
-    isEditing = false;
 
     const result = await setServerUrl(input.value.trim(), betaUiInput.checked);
 
     if (!result.ok) {
       error.textContent = result.error;
       save.disabled = info.overridden;
-      isEditing = true;
       return;
     }
 
