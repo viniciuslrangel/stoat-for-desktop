@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.111.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.111.0...v1.111.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* show server settings gear on v2 login routes only ([68f96aa](https://github.com/viniciuslrangel/stoat-for-desktop/commit/68f96aa2f9665ed6d192995c7540267f6f66716f))
+* show server settings gear on v2 login routes only ([e31324f](https://github.com/viniciuslrangel/stoat-for-desktop/commit/e31324f1b586707f0169e331bfb701f28c9e2a81))
+* stop background sync from resetting Beta UI checkbox ([4eaa35b](https://github.com/viniciuslrangel/stoat-for-desktop/commit/4eaa35b5beda0e2e2d233c5779b30e94524263b7))
+* stop background sync from resetting Beta UI checkbox ([ecee073](https://github.com/viniciuslrangel/stoat-for-desktop/commit/ecee073180ed7d27c1fe737eb08c61181b234174))
+
 ## [1.111.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.110.1...v1.111.0) (2026-08-23)
 
 
