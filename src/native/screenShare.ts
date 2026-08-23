@@ -1,5 +1,25 @@
 import { BrowserWindow, desktopCapturer, ipcMain, session } from "electron";
 
+const PICKER_THUMBNAIL_SIZE = { width: 320, height: 180 };
+
+function sourcePreviewDataUrl(source: Electron.DesktopCapturerSource): string | undefined {
+  const thumbnail = source.thumbnail;
+  if (thumbnail && !thumbnail.isEmpty()) {
+    return thumbnail.toDataURL();
+  }
+
+  const icon = source.appIcon;
+  if (!icon || icon.isEmpty()) {
+    return undefined;
+  }
+
+  if (icon.getAspectRatio() > 1) {
+    return icon.resize({ width: 256 }).toDataURL();
+  }
+
+  return icon.resize({ height: 256 }).toDataURL();
+}
+
 export function initScreenShareHandler(mainWindow: BrowserWindow) {
   session.defaultSession.setDisplayMediaRequestHandler(
     (request, callback) => {
@@ -7,7 +27,7 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
         .getSources({
           types: ["screen", "window"],
           fetchWindowIcons: true,
-          thumbnailSize: { width: 0, height: 0 },
+          thumbnailSize: PICKER_THUMBNAIL_SIZE,
         })
         .then((sources) => {
           if (sources.length == 1) {
@@ -43,19 +63,11 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
           mainWindow.webContents.send(
             "screenPicker",
             sources.map((source, idx) => {
-              const image = source.appIcon;
-              if (image) {
-                if (image.getAspectRatio() > 1) {
-                  image.resize({ width: 256 });
-                } else {
-                  image.resize({ height: 256 });
-                }
-              }
               return {
                 idx: idx,
                 name: source.name,
                 isFullScreen: source.id.startsWith("screen"),
-                image: image?.toDataURL(),
+                image: sourcePreviewDataUrl(source),
               };
             }),
           );
