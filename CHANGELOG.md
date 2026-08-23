@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.111.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.110.1...v1.111.0) (2026-08-23)
+
+
+### Features
+
+* **desktop:** add Beta UI toggle to load web client from /v2 ([7b337fc](https://github.com/viniciuslrangel/stoat-for-desktop/commit/7b337fc2c13c2402679164e09649b8deaaee939d))
+* **desktop:** Beta UI toggle to load /v2 web client ([7ac5134](https://github.com/viniciuslrangel/stoat-for-desktop/commit/7ac5134d5e0195dbdc5d9ead9569f520d29d04fe))
+
 ## [1.110.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.110.0...v1.110.1) (2026-08-20)
 
 
