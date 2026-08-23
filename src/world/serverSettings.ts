@@ -5,14 +5,17 @@ import { APP } from "../../strings";
 const ROOT_ID = "stoat-desktop-server-settings";
 
 const APP_PATH_HINT =
-  "Must include /app (e.g. https://stoat.viniciusrangel.dev/app). Host-only URLs get /app appended on save.";
+  "Must include /app (e.g. https://stoat.viniciusrangel.dev/app). Host-only URLs get /app appended on save. Enable Beta UI to load the /v2 client instead.";
 
 function getServerUrl(): Promise<ServerUrlInfo> {
   return ipcRenderer.invoke("getServerUrl");
 }
 
-function setServerUrl(url: string): Promise<SetServerUrlResult> {
-  return ipcRenderer.invoke("setServerUrl", url);
+function setServerUrl(
+  url: string,
+  betaUi: boolean,
+): Promise<SetServerUrlResult> {
+  return ipcRenderer.invoke("setServerUrl", url, betaUi);
 }
 
 /** Show on auth/landing routes; always show if path is unknown (desktop-only overlay). */
@@ -131,6 +134,27 @@ function createSettingsUi(
         opacity: 0.65;
       }
 
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        font-size: 13px;
+        color: #f2f2f2;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .toggle-row input {
+        width: auto;
+        margin: 0;
+        cursor: pointer;
+      }
+
+      .toggle-row span {
+        line-height: 1.3;
+      }
+
       .actions {
         display: flex;
         justify-content: flex-end;
@@ -180,6 +204,10 @@ function createSettingsUi(
         <div class="body">
           <label for="stoat-server-url">Server URL</label>
           <input id="stoat-server-url" type="url" spellcheck="false" placeholder="https://stoat.viniciusrangel.dev/app" />
+          <label class="toggle-row">
+            <input id="stoat-beta-ui" type="checkbox" />
+            <span>Beta UI (load client from /v2)</span>
+          </label>
           <div class="actions">
             <button class="save" type="button">Save</button>
           </div>
@@ -194,6 +222,9 @@ function createSettingsUi(
   const panel = shadow.querySelector(".panel") as HTMLDivElement;
   const fab = shadow.querySelector(".fab") as HTMLButtonElement;
   const input = shadow.querySelector("#stoat-server-url") as HTMLInputElement;
+  const betaUiInput = shadow.querySelector(
+    "#stoat-beta-ui",
+  ) as HTMLInputElement;
   const save = shadow.querySelector(".save") as HTMLButtonElement;
   const hint = shadow.querySelector(".hint") as HTMLDivElement;
   const error = shadow.querySelector(".error") as HTMLDivElement;
@@ -217,12 +248,15 @@ function createSettingsUi(
   function applyInfo(next: ServerUrlInfo, force = false) {
     if (!force && isEditing) {
       input.disabled = next.overridden;
+      betaUiInput.disabled = next.overridden;
       save.disabled = next.overridden;
       return;
     }
 
     input.value = next.url;
+    betaUiInput.checked = next.betaUi;
     input.disabled = next.overridden;
+    betaUiInput.disabled = next.overridden;
     save.disabled = next.overridden;
 
     if (next.overridden) {
@@ -244,7 +278,7 @@ function createSettingsUi(
     save.disabled = true;
     isEditing = false;
 
-    const result = await setServerUrl(input.value.trim());
+    const result = await setServerUrl(input.value.trim(), betaUiInput.checked);
 
     if (!result.ok) {
       error.textContent = result.error;
@@ -256,6 +290,7 @@ function createSettingsUi(
     info = {
       ...info,
       url: result.url,
+      betaUi: result.betaUi,
       storedUrl: result.url === info.defaultUrl ? null : result.url,
     };
     applyInfo(info, true);
