@@ -28,6 +28,9 @@ const schema = {
   discordRpc: {
     type: "boolean",
   } as JSONSchema.Boolean,
+  excludeDiscordFromScreenShareAudio: {
+    type: "boolean",
+  } as JSONSchema.Boolean,
   betaUi: {
     type: "boolean",
   } as JSONSchema.Boolean,
@@ -66,6 +69,7 @@ const store = new Store({
     spellchecker: true,
     hardwareAcceleration: true,
     discordRpc: true,
+    excludeDiscordFromScreenShareAudio: false,
     betaUi: false,
     serverUrl: null,
     windowState: {
@@ -91,6 +95,8 @@ class Config {
       spellchecker: this.spellchecker,
       hardwareAcceleration: this.hardwareAcceleration,
       discordRpc: this.discordRpc,
+      excludeDiscordFromScreenShareAudio:
+        this.excludeDiscordFromScreenShareAudio,
       betaUi: this.betaUi,
       serverUrl: this.serverUrl,
       windowState: this.windowState,
@@ -200,6 +206,21 @@ class Config {
 
     (store as never as { set(k: string, value: boolean): void }).set(
       "discordRpc",
+      value,
+    );
+
+    this.sync();
+  }
+
+  get excludeDiscordFromScreenShareAudio() {
+    return (store as never as { get(k: string): boolean }).get(
+      "excludeDiscordFromScreenShareAudio",
+    );
+  }
+
+  set excludeDiscordFromScreenShareAudio(value: boolean) {
+    (store as never as { set(k: string, value: boolean): void }).set(
+      "excludeDiscordFromScreenShareAudio",
       value,
     );
 

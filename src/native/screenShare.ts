@@ -1,7 +1,30 @@
 import { BrowserWindow, desktopCapturer, ipcMain, session } from "electron";
 
+import { config } from "./config";
+import { buildExcludePolicy } from "./excludePolicy";
+import {
+  type ProcessLoopbackMode,
+  type StartResult,
+  isProcessLoopbackSupported,
+  parseHwndFromSourceId,
+  pidFromHwnd,
+  registerProcessLoopbackIpc,
+  setProcessLoopbackStatus,
+  startExcludeCapture,
+  startIncludeCapture,
+  stopProcessLoopback,
+} from "./processLoopback";
+
 const PICKER_THUMBNAIL_SIZE = { width: 320, height: 180 };
 const PICKER_TIMEOUT_MS = 30_000;
+
+export type ScreenShareAudioMode = ProcessLoopbackMode;
+export type LastAudioSession = {
+  mode: ScreenShareAudioMode;
+  fallback: boolean;
+  pid?: number;
+  excludePids?: number[];
+};
 
 type ActiveScreenPicker = {
   callback: (streams: Electron.Streams) => void;
@@ -10,6 +33,10 @@ type ActiveScreenPicker = {
 };
 
 let activePicker: ActiveScreenPicker | undefined;
+export let lastAudioSession: LastAudioSession = {
+  mode: "off",
+  fallback: false,
+};
 
 function errorProperty(error: unknown, property: string): unknown {
   if (
@@ -58,6 +85,112 @@ function pickerAudio(requested: boolean): "loopback" | undefined {
   return requested && process.platform === "win32" ? "loopback" : undefined;
 }
 
+function isScreenShareAudioMode(value: unknown): value is ScreenShareAudioMode {
+  return (
+    value === "off" || value === "application" || value === "systemExcludeSelf"
+  );
+}
+
+function setLastAudioSession(
+  nextSession: LastAudioSession,
+  usingNative: boolean,
+  result?: StartResult,
+): void {
+  lastAudioSession = {
+    ...nextSession,
+    ...(nextSession.excludePids
+      ? { excludePids: [...nextSession.excludePids] }
+      : {}),
+  };
+  setProcessLoopbackStatus({
+    ...lastAudioSession,
+    usingNative,
+    sampleRate: result?.sampleRate ?? null,
+    channels: result?.channels ?? null,
+  });
+}
+
+function stopAudioSession(): void {
+  stopProcessLoopback();
+  setLastAudioSession({ mode: "off", fallback: false }, false);
+}
+
+function startNativeAudio(
+  source: Electron.DesktopCapturerSource,
+  mode: Exclude<ScreenShareAudioMode, "off">,
+): StartResult {
+  if (!isProcessLoopbackSupported()) {
+    throw new Error("Windows process loopback is not supported");
+  }
+
+  if (mode === "application") {
+    const hwnd = parseHwndFromSourceId(source.id);
+    if (hwnd === null) {
+      throw new Error("Unable to parse the selected window handle");
+    }
+    const pid = pidFromHwnd(hwnd);
+    const result = startIncludeCapture(pid);
+    setLastAudioSession({ mode, fallback: false, pid }, true, result);
+    return result;
+  }
+
+  const policy = buildExcludePolicy({
+    excludeDiscord: config.excludeDiscordFromScreenShareAudio,
+  });
+  const result = startExcludeCapture(policy.excludePids);
+  setLastAudioSession(
+    {
+      mode,
+      fallback: false,
+      excludePids: policy.excludePids,
+    },
+    true,
+    result,
+  );
+  return result;
+}
+
+function pickerAudioForSource(
+  source: Electron.DesktopCapturerSource,
+  requested: boolean,
+  audioMode?: unknown,
+): "loopback" | undefined {
+  if (!requested || audioMode === "off") {
+    stopAudioSession();
+    return undefined;
+  }
+
+  const mode: ScreenShareAudioMode = isScreenShareAudioMode(audioMode)
+    ? audioMode
+    : source.id.startsWith("screen")
+      ? "systemExcludeSelf"
+      : "application";
+  if (mode === "off") {
+    stopAudioSession();
+    return undefined;
+  }
+  if (process.platform !== "win32") {
+    stopProcessLoopback();
+    setLastAudioSession({ mode, fallback: false }, false);
+    return undefined;
+  }
+
+  try {
+    startNativeAudio(source, mode);
+    return undefined;
+  } catch (error) {
+    stopProcessLoopback();
+    const fallback = pickerAudio(requested);
+    setLastAudioSession({ mode, fallback: fallback !== undefined }, false);
+    console.warn("[screenshare:audio] native capture failed; using loopback", {
+      mode,
+      source: source.name,
+      error,
+    });
+    return fallback;
+  }
+}
+
 function sourcePreviewDataUrl(
   source: Electron.DesktopCapturerSource,
 ): string | undefined {
@@ -97,6 +230,7 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
     picker: ActiveScreenPicker,
     idx: number,
     audio: boolean,
+    audioMode?: ScreenShareAudioMode,
   ) => {
     if (activePicker !== picker) {
       return;
@@ -105,6 +239,7 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
     activePicker = undefined;
     clearTimeout(picker.timeout);
     if (!Number.isInteger(idx) || idx < 0 || idx >= picker.sources.length) {
+      stopAudioSession();
       const cancelled = Number.isInteger(idx) && idx < 0;
       if (cancelled) {
         logScreenShareInfo(
@@ -130,7 +265,11 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
       return;
     }
 
-    const requestedAudio = pickerAudio(audio);
+    const requestedAudio = pickerAudioForSource(
+      picker.sources[idx],
+      audio,
+      audioMode,
+    );
     try {
       picker.callback({
         video: picker.sources[idx],
@@ -147,21 +286,29 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
         action: "provide selected capture source",
         sourceIndex: idx,
         audioRequested: audio,
+        audioMode,
       });
     }
   };
 
-  ipcMain.on("screenPickerCallback", (_, idx: number, audio: boolean) => {
-    if (activePicker) {
-      finishPicker(activePicker, idx, audio === true);
-    } else {
-      logScreenShareError(
-        "screenshare:picker",
-        new Error("Screen picker callback received without an active request"),
-        { sourceIndex: idx, audio },
-      );
-    }
-  });
+  ipcMain.on(
+    "screenPickerCallback",
+    (_, idx: number, audio: boolean, audioMode?: ScreenShareAudioMode) => {
+      if (activePicker) {
+        finishPicker(activePicker, idx, audio === true, audioMode);
+      } else {
+        logScreenShareError(
+          "screenshare:picker",
+          new Error(
+            "Screen picker callback received without an active request",
+          ),
+          { sourceIndex: idx, audio },
+        );
+      }
+    },
+  );
+
+  registerProcessLoopbackIpc();
 
   session.defaultSession.setDisplayMediaRequestHandler(
     (request, callback) => {
@@ -185,6 +332,7 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
           });
           if (sources.length <= 1) {
             if (sources.length === 0) {
+              stopAudioSession();
               try {
                 callback({});
               } catch (error) {
@@ -194,7 +342,10 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
               }
               return;
             }
-            const requestedAudio = pickerAudio(request.audioRequested);
+            const requestedAudio = pickerAudioForSource(
+              sources[0],
+              request.audioRequested,
+            );
             try {
               callback({
                 video: sources[0],
@@ -207,6 +358,7 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
                   source: sources[0].name,
                   audioRequested: request.audioRequested,
                   audioProvided: requestedAudio ?? false,
+                  audioMode: lastAudioSession.mode,
                 },
               );
             } catch (error) {
@@ -249,6 +401,7 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
           }
         })
         .catch((error) => {
+          stopAudioSession();
           logScreenShareError("screenshare:picker", error, {
             action: "getSources",
             audioRequested: request.audioRequested,

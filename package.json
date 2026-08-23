@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "@homebridge/dbus-native": "^0.7.2",
+    "@stoat/win-process-loopback": "file:./native/win-process-loopback",
     "auto-launch": "^5.0.6",
     "bufferutil": "^4.0.9",
     "discord-rpc": "^4.0.1",

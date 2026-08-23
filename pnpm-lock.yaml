@@ -14,6 +14,9 @@ importers:
       '@homebridge/dbus-native':
         specifier: ^0.7.2
         version: 0.7.2
+      '@stoat/win-process-loopback':
+        specifier: file:./native/win-process-loopback
+        version: file:native/win-process-loopback
       auto-launch:
         specifier: ^5.0.6
         version: 5.0.6

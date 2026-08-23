@@ -1,0 +1,18 @@
+{
+  "name": "@stoat/win-process-loopback",
+  "version": "0.1.0",
+  "description": "Windows process loopback audio capture for Stoat",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "napi build --platform --release --js index.js",
+    "build:debug": "napi build --platform --js index.js",
+    "test": "cargo test"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.2.0"
+  },
+  "napi": {
+    "binaryName": "win-process-loopback"
+  }
+}

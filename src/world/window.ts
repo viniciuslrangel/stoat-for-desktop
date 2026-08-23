@@ -32,8 +32,16 @@ contextBridge.exposeInMainWorld("native", {
     ipcRenderer.removeAllListeners(eventName);
     ipcRenderer.once(eventName, (_, sources) => onScreenPick(sources));
   },
-  screenPickerCallback: (idx: number, audio: boolean) =>
-    ipcRenderer.send("screenPickerCallback", idx, audio),
+  screenPickerCallback: (idx: number, audio: boolean, audioMode?: string) =>
+    ipcRenderer.send("screenPickerCallback", idx, audio, audioMode),
+
+  processLoopback: {
+    isSupported: () => ipcRenderer.invoke("processLoopback:isSupported"),
+    stop: () => ipcRenderer.invoke("processLoopback:stop"),
+    readPcm: (maxFrames: number) =>
+      ipcRenderer.invoke("processLoopback:readPcm", maxFrames),
+    status: () => ipcRenderer.invoke("processLoopback:status"),
+  },
 
   isWayland: () => ipcRenderer.invoke("getIsWayland"),
 });

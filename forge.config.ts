@@ -119,7 +119,9 @@ if (!process.env.PLATFORM) {
 
 const config: ForgeConfig = {
   packagerConfig: {
-    asar: true,
+    asar: {
+      unpack: "**/*.node",
+    },
     name: APP.packageName,
     executableName: APP.execName,
     icon:
@@ -153,6 +155,27 @@ const config: ForgeConfig = {
           path.join(buildPath, "node_modules/node-pipewire/package.json"),
           { recursive: true },
         );
+      } else if (platform === "win32") {
+        const sourceDir = path.resolve("native/win-process-loopback");
+        const destinationDir = path.join(
+          buildPath,
+          "node_modules/@stoat/win-process-loopback",
+        );
+        fs.mkdirSync(destinationDir, { recursive: true });
+        for (const fileName of ["index.js", "index.d.ts", "package.json"]) {
+          fs.cpSync(
+            path.join(sourceDir, fileName),
+            path.join(destinationDir, fileName),
+          );
+        }
+        for (const fileName of fs
+          .readdirSync(sourceDir)
+          .filter((fileName) => fileName.endsWith(".node"))) {
+          fs.cpSync(
+            path.join(sourceDir, fileName),
+            path.join(destinationDir, fileName),
+          );
+        }
       }
     },
   },

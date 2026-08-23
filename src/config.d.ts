@@ -6,6 +6,7 @@ declare type DesktopConfig = {
   spellchecker: boolean;
   hardwareAcceleration: boolean;
   discordRpc: boolean;
+  excludeDiscordFromScreenShareAudio: boolean;
   betaUi: boolean;
   serverUrl: string | null;
   windowState: {
