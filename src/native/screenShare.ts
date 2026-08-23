@@ -105,11 +105,26 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
     activePicker = undefined;
     clearTimeout(picker.timeout);
     if (!Number.isInteger(idx) || idx < 0 || idx >= picker.sources.length) {
+      const cancelled = Number.isInteger(idx) && idx < 0;
+      if (cancelled) {
+        logScreenShareInfo(
+          "screenshare:cancelled",
+          "screen share capture cancelled",
+        );
+      } else {
+        logScreenShareError(
+          "screenshare:picker",
+          new Error("Invalid screen picker source selection"),
+          { sourceIndex: idx },
+        );
+      }
       try {
         picker.callback({});
       } catch (error) {
         logScreenShareError("screenshare:displayMedia", error, {
-          action: "cancel capture request",
+          action: cancelled
+            ? "cancel capture request"
+            : "reject invalid capture source",
         });
       }
       return;
