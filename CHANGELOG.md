@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.112.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.111.1...v1.112.0) (2026-08-23)
+
+
+### Features
+
+* **screenshare:** wire Windows process-loopback audio capture ([2582278](https://github.com/viniciuslrangel/stoat-for-desktop/commit/25822789268374a3952a56230963127558234f1f))
+
+
+### Bug Fixes
+
+* **desktop:** complete screen share picker requests ([8e7810d](https://github.com/viniciuslrangel/stoat-for-desktop/commit/8e7810d170cbdfdd0634429c1645d2ad1c5eb528))
+* **desktop:** distinguish cancelled screen share requests ([d1357b0](https://github.com/viniciuslrangel/stoat-for-desktop/commit/d1357b03edb0dd4c2718b839de837489cbba0ad9))
+* **desktop:** improve screen picker source previews ([9c64e84](https://github.com/viniciuslrangel/stoat-for-desktop/commit/9c64e845235fbcc913ab9673e7137e1701461488))
+* **desktop:** log screen share capture failures ([fbfbeb4](https://github.com/viniciuslrangel/stoat-for-desktop/commit/fbfbeb4102a026db3047edce381727c1a9744c84))
+
 ## [1.111.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.111.0...v1.111.1) (2026-08-23)
 
 
