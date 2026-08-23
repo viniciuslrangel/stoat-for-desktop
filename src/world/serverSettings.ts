@@ -18,9 +18,37 @@ function setServerUrl(
   return ipcRenderer.invoke("setServerUrl", url, betaUi);
 }
 
-/** Show on auth/landing routes; always show if path is unknown (desktop-only overlay). */
+function normalizePathname(): string {
+  return window.location.pathname.replace(/\/+$/, "") || "/";
+}
+
+function isV2Client(path = normalizePathname()): boolean {
+  return path === "/v2" || path.startsWith("/v2/");
+}
+
+function stripV2Prefix(path: string): string {
+  if (path === "/v2") {
+    return "/";
+  }
+
+  if (path.startsWith("/v2/")) {
+    return path.slice("/v2".length) || "/";
+  }
+
+  return path;
+}
+
+function isAuthRoute(path: string): boolean {
+  return path === "/login" || path.startsWith("/login/");
+}
+
+/** v1: login + landing routes (legacy). v2: login/auth only. */
 function shouldShowServerSettings(): boolean {
-  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  const path = normalizePathname();
+
+  if (isV2Client(path)) {
+    return isAuthRoute(stripV2Prefix(path));
+  }
 
   if (
     path.includes("/channel/") ||
