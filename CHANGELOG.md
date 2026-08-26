@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.112.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.112.0...v1.112.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* build Windows process loopback before packaging ([44578ed](https://github.com/viniciuslrangel/stoat-for-desktop/commit/44578ed866203beaf91c511ebba4392344eaf186))
+
 ## [1.112.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.111.1...v1.112.0) (2026-08-23)
 
 
