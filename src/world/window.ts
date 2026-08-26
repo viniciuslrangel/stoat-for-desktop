@@ -32,8 +32,19 @@ contextBridge.exposeInMainWorld("native", {
     ipcRenderer.removeAllListeners(eventName);
     ipcRenderer.once(eventName, (_, sources) => onScreenPick(sources));
   },
-  screenPickerCallback: (idx: number, audio: boolean, audioMode?: string) =>
-    ipcRenderer.send("screenPickerCallback", idx, audio, audioMode),
+  screenPickerCallback: (
+    idx: number,
+    audio: boolean,
+    audioMode?: string,
+    excludeDiscord?: boolean,
+  ) =>
+    ipcRenderer.send(
+      "screenPickerCallback",
+      idx,
+      audio,
+      audioMode,
+      excludeDiscord,
+    ),
 
   processLoopback: {
     isSupported: () => ipcRenderer.invoke("processLoopback:isSupported"),

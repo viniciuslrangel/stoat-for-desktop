@@ -118,6 +118,7 @@ function stopAudioSession(): void {
 function startNativeAudio(
   source: Electron.DesktopCapturerSource,
   mode: Exclude<ScreenShareAudioMode, "off">,
+  excludeDiscord?: boolean,
 ): StartResult {
   if (!isProcessLoopbackSupported()) {
     throw new Error("Windows process loopback is not supported");
@@ -135,7 +136,11 @@ function startNativeAudio(
   }
 
   const policy = buildExcludePolicy({
-    excludeDiscord: config.excludeDiscordFromScreenShareAudio,
+    excludeDiscord: excludeDiscord ?? config.excludeDiscordFromScreenShareAudio,
+  });
+  logScreenShareInfo("screenshare:audio", "starting exclusion capture", {
+    source: source.name,
+    excludeLabels: policy.labels,
   });
   const result = startExcludeCapture(policy.excludePids);
   setLastAudioSession(
@@ -154,6 +159,7 @@ function pickerAudioForSource(
   source: Electron.DesktopCapturerSource,
   requested: boolean,
   audioMode?: unknown,
+  excludeDiscord?: boolean,
 ): "loopback" | undefined {
   if (!requested || audioMode === "off") {
     stopAudioSession();
@@ -176,7 +182,11 @@ function pickerAudioForSource(
   }
 
   try {
-    startNativeAudio(source, mode);
+    startNativeAudio(
+      source,
+      mode,
+      mode === "systemExcludeSelf" ? (excludeDiscord ?? true) : undefined,
+    );
     return undefined;
   } catch (error) {
     stopProcessLoopback();
@@ -231,6 +241,7 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
     idx: number,
     audio: boolean,
     audioMode?: ScreenShareAudioMode,
+    excludeDiscord?: boolean,
   ) => {
     if (activePicker !== picker) {
       return;
@@ -269,6 +280,7 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
       picker.sources[idx],
       audio,
       audioMode,
+      excludeDiscord,
     );
     try {
       picker.callback({
@@ -293,9 +305,21 @@ export function initScreenShareHandler(mainWindow: BrowserWindow) {
 
   ipcMain.on(
     "screenPickerCallback",
-    (_, idx: number, audio: boolean, audioMode?: ScreenShareAudioMode) => {
+    (
+      _,
+      idx: number,
+      audio: boolean,
+      audioMode?: ScreenShareAudioMode,
+      excludeDiscord?: boolean,
+    ) => {
       if (activePicker) {
-        finishPicker(activePicker, idx, audio === true, audioMode);
+        finishPicker(
+          activePicker,
+          idx,
+          audio === true,
+          audioMode,
+          excludeDiscord,
+        );
       } else {
         logScreenShareError(
           "screenshare:picker",
