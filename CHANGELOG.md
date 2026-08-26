@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.113.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.113.0...v1.113.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **screenshare:** buffer process loopback audio and add diagnostics ([58cf6dd](https://github.com/viniciuslrangel/stoat-for-desktop/commit/58cf6ddc84f99593f0f1655e33a5c62eca3230c8))
+
 ## [1.113.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.112.3...v1.113.0) (2026-08-26)
 
 
