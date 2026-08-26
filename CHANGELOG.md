@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.113.0](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.112.3...v1.113.0) (2026-08-26)
+
+
+### Features
+
+* **screenshare:** exclude Discord audio from monitor shares ([fd0cc98](https://github.com/viniciuslrangel/stoat-for-desktop/commit/fd0cc986e0c422ff5e0bbb24a055ac89a620f697))
+
+
+### Bug Fixes
+
+* **screenshare:** bound process loopback capture latency ([3a87ef3](https://github.com/viniciuslrangel/stoat-for-desktop/commit/3a87ef30a2fc5763a8aa178b140038217aa50cee))
+
 ## [1.112.3](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.112.2...v1.112.3) (2026-08-26)
 
 
