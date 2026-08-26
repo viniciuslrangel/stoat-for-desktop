@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.112.3](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.112.2...v1.112.3) (2026-08-26)
+
+
+### Bug Fixes
+
+* **screenshare:** unblock silent exclusion streams ([bbc4fa5](https://github.com/viniciuslrangel/stoat-for-desktop/commit/bbc4fa5b01442184b9893fa17e8555cffdeec3fe))
+* **screenshare:** use supported process loopback flags ([f3a17b9](https://github.com/viniciuslrangel/stoat-for-desktop/commit/f3a17b9e94daf33def2d9384ae809204c2370358))
+
 ## [1.112.2](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.112.1...v1.112.2) (2026-08-26)
 
 
