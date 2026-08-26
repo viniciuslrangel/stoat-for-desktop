@@ -54,6 +54,17 @@ jobs:
       - name: Install dependencies
         run: pnpm ci
 
+      - name: Set up Rust
+        if: matrix.os == 'windows-latest'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Windows process loopback
+        if: matrix.os == 'windows-latest'
+        run: |
+          npm ci
+          npm run build
+        working-directory: native/win-process-loopback
+
       - name: Publish
         run: pnpm run publish
         env:

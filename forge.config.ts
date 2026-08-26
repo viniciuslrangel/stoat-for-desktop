@@ -168,9 +168,15 @@ const config: ForgeConfig = {
             path.join(destinationDir, fileName),
           );
         }
-        for (const fileName of fs
+        const nativeBinaries = fs
           .readdirSync(sourceDir)
-          .filter((fileName) => fileName.endsWith(".node"))) {
+          .filter((fileName) => fileName.endsWith(".node"));
+        if (nativeBinaries.length === 0) {
+          throw new Error(
+            "Windows process-loopback addon was not built; run npm run build in native/win-process-loopback",
+          );
+        }
+        for (const fileName of nativeBinaries) {
           fs.cpSync(
             path.join(sourceDir, fileName),
             path.join(destinationDir, fileName),
