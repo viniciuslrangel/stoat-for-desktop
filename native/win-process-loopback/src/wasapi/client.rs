@@ -5,8 +5,7 @@ use std::ptr;
 
 use windows::Win32::Media::Audio::{
     IAudioCaptureClient, IAudioClient, AUDCLNT_BUFFERFLAGS_SILENT, AUDCLNT_SHAREMODE_SHARED,
-    AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM, AUDCLNT_STREAMFLAGS_LOOPBACK,
-    AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY, WAVEFORMATEX, WAVE_FORMAT_PCM,
+    AUDCLNT_STREAMFLAGS_LOOPBACK, WAVEFORMATEX, WAVE_FORMAT_PCM,
 };
 use windows::Win32::Media::Multimedia::WAVE_FORMAT_IEEE_FLOAT;
 use windows::Win32::System::Com::CoTaskMemFree;
@@ -312,8 +311,6 @@ impl ProcessLoopbackFormat {
 }
 
 unsafe fn initialize(client: &IAudioClient, format: &WAVEFORMATEX) -> windows::core::Result<()> {
-    let flags = AUDCLNT_STREAMFLAGS_LOOPBACK
-        | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
-        | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
+    let flags = AUDCLNT_STREAMFLAGS_LOOPBACK;
     unsafe { client.Initialize(AUDCLNT_SHAREMODE_SHARED, flags, 10_000_000, 0, format, None) }
 }
