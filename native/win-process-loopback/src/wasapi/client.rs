@@ -6,8 +6,9 @@ use std::ptr;
 use windows::Win32::Media::Audio::{
     IAudioCaptureClient, IAudioClient, AUDCLNT_BUFFERFLAGS_SILENT, AUDCLNT_SHAREMODE_SHARED,
     AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM, AUDCLNT_STREAMFLAGS_LOOPBACK,
-    AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY,
+    AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY, WAVEFORMATEX, WAVE_FORMAT_PCM,
 };
+use windows::Win32::Media::Multimedia::WAVE_FORMAT_IEEE_FLOAT;
 use windows::Win32::System::Com::CoTaskMemFree;
 
 use crate::exclude::{CapturePlan, Strategy};
@@ -27,7 +28,7 @@ pub(super) struct CaptureClient {
 }
 
 impl CaptureClient {
-    fn open(client: IAudioClient) -> Result<Self, String> {
+    fn open_endpoint(client: IAudioClient) -> Result<Self, String> {
         let mix_format = unsafe {
             client
                 .GetMixFormat()
@@ -57,23 +58,41 @@ impl CaptureClient {
             return Err("WASAPI returned an invalid block alignment".to_string());
         }
 
-        let flags = AUDCLNT_STREAMFLAGS_LOOPBACK
-            | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
-            | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
-        let initialized = unsafe {
-            client.Initialize(
-                AUDCLNT_SHAREMODE_SHARED,
-                flags,
-                10_000_000,
-                0,
-                &*mix_format,
-                None,
-            )
-        };
+        let initialized = unsafe { initialize(&client, &*mix_format) };
         unsafe {
             CoTaskMemFree(Some(mix_format.cast()));
         }
         initialized.map_err(|error| format!("WASAPI Initialize failed: {error}"))?;
+        Self::finish_open(client, source_format, block_align)
+    }
+
+    fn open_process_loopback(client: IAudioClient) -> Result<Self, String> {
+        let mut errors = Vec::new();
+        for format in ProcessLoopbackFormat::ALL {
+            let wave_format = format.wave_format();
+            match unsafe { initialize(&client, &wave_format) } {
+                Ok(()) => {
+                    let source_format = format.source_format();
+                    return Self::finish_open(
+                        client,
+                        source_format,
+                        source_format.bytes_per_frame(),
+                    );
+                }
+                Err(error) => errors.push(format!("{format:?}: {error}")),
+            }
+        }
+        Err(format!(
+            "WASAPI process loopback Initialize failed: {}",
+            errors.join("; ")
+        ))
+    }
+
+    fn finish_open(
+        client: IAudioClient,
+        source_format: SourceFormat,
+        block_align: usize,
+    ) -> Result<Self, String> {
         let capture = unsafe {
             client
                 .GetService::<IAudioCaptureClient>()
@@ -178,17 +197,18 @@ impl PumpGraph {
         match &plan.strategy {
             Strategy::IncludeTree { .. } | Strategy::NativeExcludeTree { .. } => {
                 let client = super::activate::activate_process_client(plan)?;
-                Ok(Self::Single(CaptureClient::open(client)?))
+                Ok(Self::Single(CaptureClient::open_process_loopback(client)?))
             }
             Strategy::Subtractive { exclusion_roots } => {
-                let endpoint = CaptureClient::open(super::activate::activate_endpoint_client()?)?;
+                let endpoint =
+                    CaptureClient::open_endpoint(super::activate::activate_endpoint_client()?)?;
                 let mut exclusions = Vec::with_capacity(exclusion_roots.len());
                 for root in exclusion_roots {
                     let process_client = super::activate::activate_process_client(&CapturePlan {
                         target_pid: *root,
                         strategy: Strategy::IncludeTree { pid: *root },
                     })?;
-                    exclusions.push(CaptureClient::open(process_client)?);
+                    exclusions.push(CaptureClient::open_process_loopback(process_client)?);
                 }
                 let exclusion_queues = (0..exclusions.len()).map(|_| VecDeque::new()).collect();
                 Ok(Self::Subtractive {
@@ -247,4 +267,53 @@ fn pop_sample(queue: &mut VecDeque<f32>) -> f32 {
         Some(value) => value,
         None => 0.0,
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum ProcessLoopbackFormat {
+    Float32,
+    Pcm16,
+}
+
+impl ProcessLoopbackFormat {
+    const ALL: [Self; 2] = [Self::Float32, Self::Pcm16];
+
+    fn source_format(self) -> SourceFormat {
+        SourceFormat {
+            sample_rate: OUTPUT_RATE,
+            channels: OUTPUT_CHANNELS as u16,
+            encoding: match self {
+                Self::Float32 => crate::format::SampleEncoding::Float32,
+                Self::Pcm16 => crate::format::SampleEncoding::Pcm16,
+            },
+            valid_bits: match self {
+                Self::Float32 => 32,
+                Self::Pcm16 => 16,
+            },
+        }
+    }
+
+    fn wave_format(self) -> WAVEFORMATEX {
+        let (w_format_tag, bits_per_sample) = match self {
+            Self::Float32 => (WAVE_FORMAT_IEEE_FLOAT as u16, 32),
+            Self::Pcm16 => (WAVE_FORMAT_PCM as u16, 16),
+        };
+        let block_align = OUTPUT_CHANNELS as u16 * (bits_per_sample / 8);
+        WAVEFORMATEX {
+            wFormatTag: w_format_tag,
+            nChannels: OUTPUT_CHANNELS as u16,
+            nSamplesPerSec: OUTPUT_RATE,
+            nAvgBytesPerSec: OUTPUT_RATE * u32::from(block_align),
+            nBlockAlign: block_align,
+            wBitsPerSample: bits_per_sample,
+            cbSize: 0,
+        }
+    }
+}
+
+unsafe fn initialize(client: &IAudioClient, format: &WAVEFORMATEX) -> windows::core::Result<()> {
+    let flags = AUDCLNT_STREAMFLAGS_LOOPBACK
+        | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
+        | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY;
+    unsafe { client.Initialize(AUDCLNT_SHAREMODE_SHARED, flags, 10_000_000, 0, format, None) }
 }
