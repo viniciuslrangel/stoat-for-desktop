@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.112.2](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.112.1...v1.112.2) (2026-08-26)
+
+
+### Bug Fixes
+
+* **screenshare:** skip GetMixFormat on process loopback ([d0bbbde](https://github.com/viniciuslrangel/stoat-for-desktop/commit/d0bbbdea5d61e46bcd3f7788a42929a90714708d))
+
 ## [1.112.1](https://github.com/viniciuslrangel/stoat-for-desktop/compare/v1.112.0...v1.112.1) (2026-08-26)
 
 
