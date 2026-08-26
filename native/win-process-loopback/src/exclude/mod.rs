@@ -50,10 +50,7 @@ impl CapturePlan {
                         // The Windows process-loopback activation contract has
                         // one TargetProcessId, not a list. For multiple roots,
                         // capture the default render loopback and subtract
-                        // one include-tree capture per root. Packet boundaries
-                        // differ between clients, so the mixer aligns queues
-                        // by available frame counts instead of subtracting
-                        // raw WASAPI packet arrays.
+                        // one include-tree capture per root.
                         Ok(Self {
                             target_pid: pid,
                             strategy: Strategy::Subtractive { exclusion_roots },

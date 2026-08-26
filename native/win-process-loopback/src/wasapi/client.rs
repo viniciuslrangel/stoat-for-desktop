@@ -240,11 +240,7 @@ impl PumpGraph {
                 for (client, queue) in exclusions.iter_mut().zip(exclusion_queues.iter_mut()) {
                     client.read_available(queue)?;
                 }
-                let available = std::iter::once(endpoint_queue.len())
-                    .chain(exclusion_queues.iter().map(VecDeque::len))
-                    .min()
-                    .map_or(0, |length| length);
-                let frames = available / OUTPUT_CHANNELS;
+                let frames = endpoint_queue.len() / OUTPUT_CHANNELS;
                 mixed.clear();
                 mixed.reserve(frames * OUTPUT_CHANNELS);
                 for _ in 0..frames {
