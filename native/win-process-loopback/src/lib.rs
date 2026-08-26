@@ -82,7 +82,7 @@ pub fn start_capture(mode: String, pid: u32, exclude_pids: Vec<u32>) -> Result<S
         return Err(error("a capture session is already running"));
     }
 
-    let ring = Arc::new(Ring::new(48_000));
+    let ring = Arc::new(Ring::new(2_400));
     let stop = Arc::new(AtomicBool::new(false));
     let mut pump = wasapi::start(plan.clone(), Arc::clone(&ring), Arc::clone(&stop))?;
 

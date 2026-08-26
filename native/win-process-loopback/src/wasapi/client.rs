@@ -16,6 +16,7 @@ use crate::pcm::Ring;
 
 const OUTPUT_RATE: u32 = 48_000;
 const OUTPUT_CHANNELS: usize = 2;
+const BUFFER_DURATION_HNS: i64 = 500_000;
 
 pub(super) struct CaptureClient {
     client: IAudioClient,
@@ -308,5 +309,14 @@ impl ProcessLoopbackFormat {
 
 unsafe fn initialize(client: &IAudioClient, format: &WAVEFORMATEX) -> windows::core::Result<()> {
     let flags = AUDCLNT_STREAMFLAGS_LOOPBACK;
-    unsafe { client.Initialize(AUDCLNT_SHAREMODE_SHARED, flags, 10_000_000, 0, format, None) }
+    unsafe {
+        client.Initialize(
+            AUDCLNT_SHAREMODE_SHARED,
+            flags,
+            BUFFER_DURATION_HNS,
+            0,
+            format,
+            None,
+        )
+    }
 }

@@ -169,7 +169,7 @@ export function registerProcessLoopbackIpc(): void {
     stopProcessLoopback();
   });
   ipcMain.handle("processLoopback:readPcm", (_, maxFrames: number) =>
-    Array.from(readProcessLoopbackPcm(maxFrames)),
+    readProcessLoopbackPcm(maxFrames),
   );
   ipcMain.handle("processLoopback:status", () => getProcessLoopbackStatus());
 }
