@@ -15,3 +15,15 @@ export function startCapture(
 ): StartResult;
 export function stopCapture(): void;
 export function readPcm(maxFrames: number): Float32Array;
+export function getDiagnostics(): {
+  startedAt?: number;
+  framesCaptured: number;
+  framesRead: number;
+  underruns: number;
+  overruns: number;
+  silentPackets: number;
+  avgFillMs: number;
+  peakFillMs: number;
+  queueMs: number;
+  lastError?: string | null;
+};

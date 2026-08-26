@@ -8,6 +8,7 @@ import {
   isProcessLoopbackSupported,
   parseHwndFromSourceId,
   pidFromHwnd,
+  queryProcessImage,
   registerProcessLoopbackIpc,
   setProcessLoopbackStatus,
   startExcludeCapture,
@@ -24,6 +25,9 @@ export type LastAudioSession = {
   fallback: boolean;
   pid?: number;
   excludePids?: number[];
+  pids?: number[];
+  labels?: string[];
+  startedAt?: number;
 };
 
 type ActiveScreenPicker = {
@@ -98,9 +102,12 @@ function setLastAudioSession(
 ): void {
   lastAudioSession = {
     ...nextSession,
+    ...(usingNative ? { startedAt: Date.now() } : {}),
     ...(nextSession.excludePids
       ? { excludePids: [...nextSession.excludePids] }
       : {}),
+    ...(nextSession.pids ? { pids: [...nextSession.pids] } : {}),
+    ...(nextSession.labels ? { labels: [...nextSession.labels] } : {}),
   };
   setProcessLoopbackStatus({
     ...lastAudioSession,
@@ -108,6 +115,11 @@ function setLastAudioSession(
     sampleRate: result?.sampleRate ?? null,
     channels: result?.channels ?? null,
   });
+  if (usingNative) {
+    console.info(
+      "[screenshare:audio] debug: await window.__stoatScreenShareAudioDebug?.()",
+    );
+  }
 }
 
 function stopAudioSession(): void {
@@ -131,7 +143,17 @@ function startNativeAudio(
     }
     const pid = pidFromHwnd(hwnd);
     const result = startIncludeCapture(pid);
-    setLastAudioSession({ mode, fallback: false, pid }, true, result);
+    setLastAudioSession(
+      {
+        mode,
+        fallback: false,
+        pid,
+        pids: [pid],
+        labels: [queryProcessImage(pid) ?? `pid:${pid}`],
+      },
+      true,
+      result,
+    );
     return result;
   }
 
@@ -148,6 +170,8 @@ function startNativeAudio(
       mode,
       fallback: false,
       excludePids: policy.excludePids,
+      pids: policy.excludePids,
+      labels: policy.labels,
     },
     true,
     result,

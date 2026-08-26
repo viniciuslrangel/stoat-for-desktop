@@ -13,6 +13,7 @@ use std::time::Duration;
 
 use napi::{Error, Result, Status};
 
+use crate::diagnostics::CaptureMetrics;
 use crate::exclude::CapturePlan;
 use crate::pcm::Ring;
 
@@ -44,7 +45,12 @@ impl PumpHandle {
 }
 
 #[cfg(windows)]
-pub fn start(plan: CapturePlan, ring: Arc<Ring>, stop: Arc<AtomicBool>) -> Result<PumpHandle> {
+pub fn start(
+    plan: CapturePlan,
+    ring: Arc<Ring>,
+    stop: Arc<AtomicBool>,
+    metrics: Arc<CaptureMetrics>,
+) -> Result<PumpHandle> {
     let (sender, receiver): (
         Sender<std::result::Result<(), String>>,
         Receiver<std::result::Result<(), String>>,
@@ -63,7 +69,7 @@ pub fn start(plan: CapturePlan, ring: Arc<Ring>, stop: Arc<AtomicBool>) -> Resul
                 return;
             }
 
-            let graph = super::client::PumpGraph::open(&plan);
+            let graph = super::client::PumpGraph::open(&plan, Arc::clone(&metrics));
             let mut graph = match graph {
                 Ok(graph) => {
                     let _ = sender.send(Ok(()));
@@ -79,7 +85,8 @@ pub fn start(plan: CapturePlan, ring: Arc<Ring>, stop: Arc<AtomicBool>) -> Resul
             };
 
             while !stop.load(Ordering::Acquire) {
-                if graph.pump_once(&ring).is_err() {
+                if let Err(error) = graph.pump_once(&ring) {
+                    metrics.set_last_error(error);
                     break;
                 }
                 thread::sleep(Duration::from_millis(2));
@@ -103,7 +110,12 @@ pub fn start(plan: CapturePlan, ring: Arc<Ring>, stop: Arc<AtomicBool>) -> Resul
 }
 
 #[cfg(not(windows))]
-pub fn start(_: CapturePlan, _: Arc<Ring>, _: Arc<AtomicBool>) -> Result<PumpHandle> {
+pub fn start(
+    _: CapturePlan,
+    _: Arc<Ring>,
+    _: Arc<AtomicBool>,
+    _: Arc<CaptureMetrics>,
+) -> Result<PumpHandle> {
     Err(Error::new(
         Status::GenericFailure,
         "process loopback is only supported on Windows",

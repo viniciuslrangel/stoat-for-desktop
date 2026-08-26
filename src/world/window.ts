@@ -52,6 +52,8 @@ contextBridge.exposeInMainWorld("native", {
     readPcm: (maxFrames: number) =>
       ipcRenderer.invoke("processLoopback:readPcm", maxFrames),
     status: () => ipcRenderer.invoke("processLoopback:status"),
+    debugDump: () => ipcRenderer.invoke("processLoopback:diagnostics"),
+    getDiagnostics: () => ipcRenderer.invoke("processLoopback:diagnostics"),
   },
 
   isWayland: () => ipcRenderer.invoke("getIsWayland"),

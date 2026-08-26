@@ -10,6 +10,7 @@ use windows::Win32::Media::Audio::{
 use windows::Win32::Media::Multimedia::WAVE_FORMAT_IEEE_FLOAT;
 use windows::Win32::System::Com::CoTaskMemFree;
 
+use crate::diagnostics::CaptureMetrics;
 use crate::exclude::{CapturePlan, Strategy};
 use crate::format::{from_wave_format, normalize_packet, resample_linear, SourceFormat};
 use crate::pcm::Ring;
@@ -23,12 +24,16 @@ pub(super) struct CaptureClient {
     capture: IAudioCaptureClient,
     source_format: SourceFormat,
     block_align: usize,
+    metrics: std::sync::Arc<CaptureMetrics>,
     normalized: Vec<f32>,
     resampled: Vec<f32>,
 }
 
 impl CaptureClient {
-    fn open_endpoint(client: IAudioClient) -> Result<Self, String> {
+    fn open_endpoint(
+        client: IAudioClient,
+        metrics: std::sync::Arc<CaptureMetrics>,
+    ) -> Result<Self, String> {
         let mix_format = unsafe {
             client
                 .GetMixFormat()
@@ -63,10 +68,13 @@ impl CaptureClient {
             CoTaskMemFree(Some(mix_format.cast()));
         }
         initialized.map_err(|error| format!("WASAPI Initialize failed: {error}"))?;
-        Self::finish_open(client, source_format, block_align)
+        Self::finish_open(client, source_format, block_align, metrics)
     }
 
-    fn open_process_loopback(client: IAudioClient) -> Result<Self, String> {
+    fn open_process_loopback(
+        client: IAudioClient,
+        metrics: std::sync::Arc<CaptureMetrics>,
+    ) -> Result<Self, String> {
         let mut errors = Vec::new();
         for format in ProcessLoopbackFormat::ALL {
             let wave_format = format.wave_format();
@@ -77,6 +85,7 @@ impl CaptureClient {
                         client,
                         source_format,
                         source_format.bytes_per_frame(),
+                        std::sync::Arc::clone(&metrics),
                     );
                 }
                 Err(error) => errors.push(format!("{format:?}: {error}")),
@@ -92,6 +101,7 @@ impl CaptureClient {
         client: IAudioClient,
         source_format: SourceFormat,
         block_align: usize,
+        metrics: std::sync::Arc<CaptureMetrics>,
     ) -> Result<Self, String> {
         let capture = unsafe {
             client
@@ -108,6 +118,7 @@ impl CaptureClient {
             capture,
             source_format,
             block_align,
+            metrics,
             normalized: Vec::new(),
             resampled: Vec::new(),
         })
@@ -143,6 +154,7 @@ impl CaptureClient {
             };
             let byte_count = frame_count.saturating_mul(self.block_align);
             if flags & (AUDCLNT_BUFFERFLAGS_SILENT.0 as u32) != 0 {
+                self.metrics.add_silent_packet();
                 self.normalized.clear();
                 self.normalized.resize(frame_count * OUTPUT_CHANNELS, 0.0);
             } else if data.is_null() {
@@ -165,6 +177,8 @@ impl CaptureClient {
                 OUTPUT_RATE,
                 &mut self.resampled,
             );
+            self.metrics
+                .add_frames_captured(self.resampled.len() / OUTPUT_CHANNELS);
             queue.extend(self.resampled.iter().copied());
         }
         Ok(())
@@ -193,22 +207,32 @@ pub(super) enum PumpGraph {
 }
 
 impl PumpGraph {
-    pub(super) fn open(plan: &CapturePlan) -> Result<Self, String> {
+    pub(super) fn open(
+        plan: &CapturePlan,
+        metrics: std::sync::Arc<CaptureMetrics>,
+    ) -> Result<Self, String> {
         match &plan.strategy {
             Strategy::IncludeTree { .. } | Strategy::NativeExcludeTree { .. } => {
                 let client = super::activate::activate_process_client(plan)?;
-                Ok(Self::Single(CaptureClient::open_process_loopback(client)?))
+                Ok(Self::Single(CaptureClient::open_process_loopback(
+                    client, metrics,
+                )?))
             }
             Strategy::Subtractive { exclusion_roots } => {
-                let endpoint =
-                    CaptureClient::open_endpoint(super::activate::activate_endpoint_client()?)?;
+                let endpoint = CaptureClient::open_endpoint(
+                    super::activate::activate_endpoint_client()?,
+                    std::sync::Arc::clone(&metrics),
+                )?;
                 let mut exclusions = Vec::with_capacity(exclusion_roots.len());
                 for root in exclusion_roots {
                     let process_client = super::activate::activate_process_client(&CapturePlan {
                         target_pid: *root,
                         strategy: Strategy::IncludeTree { pid: *root },
                     })?;
-                    exclusions.push(CaptureClient::open_process_loopback(process_client)?);
+                    exclusions.push(CaptureClient::open_process_loopback(
+                        process_client,
+                        std::sync::Arc::clone(&metrics),
+                    )?);
                 }
                 let exclusion_queues = (0..exclusions.len()).map(|_| VecDeque::new()).collect();
                 Ok(Self::Subtractive {
